@@ -1,10 +1,11 @@
-import { formatMonth } from '../domain/dates.ts';
+import { formatMonth, today } from '../domain/dates.ts';
 import { groupByMonth, runningBalance } from '../domain/ledger.ts';
+import { statementMessage } from '../domain/share.ts';
 import type { AppData, EntryKind } from '../domain/types.ts';
 import { h } from '../ui/dom.ts';
 import { icon } from '../ui/icons.ts';
 import { openEntrySheet } from './entrySheet.ts';
-import { emptyState, entryRow, money, screenHeader, segmented } from './shared.ts';
+import { emptyState, entryRow, money, openWhatsApp, screenHeader, segmented } from './shared.ts';
 
 type Filter = 'all' | EntryKind;
 let filter: Filter = 'all';
@@ -39,7 +40,17 @@ export function historyScreen(data: AppData): HTMLElement {
   return h(
     'div',
     { class: 'screen' },
-    screenHeader('History', `${data.entries.length} ${data.entries.length === 1 ? 'entry' : 'entries'}`),
+    screenHeader(
+      'History',
+      `${data.entries.length} ${data.entries.length === 1 ? 'entry' : 'entries'}`,
+      data.entries.length > 0 &&
+        h('button', {
+          class: 'btn btn-secondary btn-sm',
+          type: 'button',
+          title: 'Everything since you last gave money, as one WhatsApp message',
+          onClick: () => openWhatsApp(statementMessage(data.entries, data.settings.currency, today(), data.settings.shopName)),
+        }, icon('send', 18), 'Send statement'),
+    ),
     h('div', { class: 'filter-row' },
       segmented<Filter>('Show', [
         { id: 'all', label: 'All' },

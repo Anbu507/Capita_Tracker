@@ -99,6 +99,12 @@
   width: 100%;
 }
 
+.btn-sm {
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 0.875rem;
+}
+
 .btn-row {
   display: flex;
   flex-wrap: wrap;
@@ -1033,4 +1039,353 @@ input::placeholder {
 
 .toast-action:hover {
   background: rgba(255, 255, 255, 0.08);
+}
+
+/* ---------- 1.1.1: small additions ---------- */
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-2);
+}
+
+.btn-ghost:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.hero-shop {
+  grid-column: 1 / -1;
+}
+
+.amount-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+  cursor: pointer;
+}
+
+.check-row input {
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+  margin: 1px 0 0;
+  flex: none;
+  accent-color: var(--accent-btn);
+}
+
+.check-row strong {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.check-row span {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+/* ---------- 1.1.1: Shop view (handed to the shopkeeper) ---------- */
+
+.shop-mode .nav {
+  display: none;
+}
+
+.shop-mode .app {
+  display: block;
+}
+
+.shop-mode .main {
+  padding: calc(env(safe-area-inset-top) + 12px) calc(env(safe-area-inset-right) + var(--gutter))
+    calc(env(safe-area-inset-bottom) + 24px) calc(env(safe-area-inset-left) + var(--gutter));
+}
+
+.shop-mode .toast-region {
+  bottom: calc(env(safe-area-inset-bottom) + 16px);
+}
+
+.shop {
+  display: grid;
+  gap: 16px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.shop-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.shop-top .btn {
+  min-height: 44px;
+  padding: 0 12px 0 8px;
+}
+
+.shop-name {
+  color: var(--text-muted);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shop-balance {
+  text-align: center;
+  padding: 8px 0 4px;
+}
+
+.shop-balance-label {
+  color: var(--text-2);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.shop-balance-value {
+  font-size: clamp(3.5rem, 19vw, 5.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.shop-balance.is-negative .shop-balance-value {
+  color: var(--critical-text);
+}
+
+.shop-body,
+.shop-entry {
+  display: grid;
+  gap: 14px;
+}
+
+.shop-card {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+
+.shop-items {
+  display: grid;
+  gap: 10px;
+}
+
+.shop-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto 3ch auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.shop-item-pic {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.shop-item-name {
+  color: var(--text-2);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shop-step {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  background: var(--surface-2);
+  color: var(--text);
+  touch-action: manipulation;
+  transition: transform var(--fast) var(--ease), background-color var(--fast);
+}
+
+.shop-step:active,
+.key:active {
+  transform: scale(0.95);
+  background: var(--surface-3);
+}
+
+.shop-count {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.shop-amount {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 4px 0;
+}
+
+.shop-amount-label {
+  color: var(--text-2);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.shop-amount-value {
+  font-size: 2.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.shop-amount-value.is-empty {
+  color: var(--text-muted);
+}
+
+.shop-hint {
+  padding: 0 4px;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  text-align: right;
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.key {
+  display: grid;
+  place-items: center;
+  min-height: 64px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 1.875rem;
+  font-weight: 650;
+  touch-action: manipulation;
+  user-select: none;
+  transition: transform var(--fast) var(--ease), background-color var(--fast);
+}
+
+.key-fn {
+  color: var(--text-2);
+  font-size: 1.375rem;
+}
+
+.shop-save,
+.shop-big-btn {
+  min-height: 64px;
+  border-radius: 18px;
+  font-size: 1.25rem;
+}
+
+.shop-save {
+  width: 100%;
+}
+
+.shop-save:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.shop-result {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 20px 4px 4px;
+  text-align: center;
+  animation: screen-in var(--medium) var(--ease) both;
+}
+
+.big-check {
+  display: grid;
+  place-items: center;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  background: var(--good-wash);
+  color: var(--good-text);
+  animation: pop-in 380ms var(--ease) both;
+}
+
+@keyframes pop-in {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+
+.shop-result-title {
+  font-size: 1.75rem;
+}
+
+.shop-result-line {
+  color: var(--text-2);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.shop-today-list {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.shop-today-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  font-size: 1.125rem;
+}
+
+.shop-actions {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.shop-undo {
+  margin-top: 6px;
+  padding: 10px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+@media (max-width: 360px) {
+  .shop-step {
+    width: 52px;
+    height: 52px;
+  }
+
+  .shop-item-name {
+    display: none;
+  }
+}
+
+.settings-test {
+  margin-top: 8px;
+  font-size: 0.875rem;
+}
+
+.settings-section .settings-test + .field {
+  margin-top: 16px;
 }

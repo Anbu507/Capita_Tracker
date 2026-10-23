@@ -48,6 +48,10 @@ export interface Settings {
   lowBalance: Paise;
   theme: Theme;
   lastBackupAt: number | null;
+  /** Shopkeeper's WhatsApp number: digits with country code ("919876543210"), '' when not set. */
+  shopPhone: string;
+  /** Remembered choice of the "Send to shop on WhatsApp" box. */
+  sendToShop: boolean;
 }
 
 export interface AppData {

@@ -1,6 +1,6 @@
 // Pure ledger maths. No DOM, no storage — everything here is unit tested.
 import { addDays, eachDay, monthKey, startOfWeek } from './dates.ts';
-import type { Entry, ISODate, Paise, PurchaseEntry } from './types.ts';
+import type { Entry, EntryKind, ISODate, Item, Paise, PurchaseEntry } from './types.ts';
 
 export function compareEntries(a: Entry, b: Entry): number {
   return a.date < b.date ? -1 : a.date > b.date ? 1 : a.createdAt - b.createdAt;
@@ -35,6 +35,24 @@ export function lastPurchase(entries: readonly Entry[]): PurchaseEntry | undefin
   let last: PurchaseEntry | undefined;
   for (const e of entries) if (e.kind === 'purchase' && (!last || compareEntries(e, last) > 0)) last = e;
   return last;
+}
+
+/** Quantities to pre-fill for a new purchase: what I took last time, else each item's usual quantity. */
+export function usualQuantities(items: readonly Item[], entries: readonly Entry[]): Map<string, number> {
+  const last = lastPurchase(entries);
+  return new Map(
+    items.filter((i) => !i.archived).map((i) => [i.id, last?.items.find((x) => x.itemId === i.id)?.qty ?? i.defaultQty]),
+  );
+}
+
+/** The last few different amounts of one kind, newest first — one-tap choices in the entry sheet. */
+export function recentAmounts(entries: readonly Entry[], kind: EntryKind, count = 3): Paise[] {
+  const out: Paise[] = [];
+  for (const e of sortEntries(entries).reverse()) {
+    if (e.kind === kind && !out.includes(e.amount)) out.push(e.amount);
+    if (out.length === count) break;
+  }
+  return out;
 }
 
 /** Purchase total per date (several purchases on one day are summed). */

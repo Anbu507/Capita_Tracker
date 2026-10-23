@@ -1,5 +1,10 @@
 # Capital Tracker — Architecture
 
+| Version | What it is |
+|---|---|
+| **1.0.0** (git tag `v1.0.0`) | Base version: the student's tracker — balance, daily log, history, charts, backup. |
+| **1.1.1** | Same base, made for **both people**: the shopkeeper gets WhatsApp messages and a big, simple Shop view. See [§13](#13-version-111--made-for-the-shopkeeper-too). |
+
 ## 1. The problem
 
 Every day I buy **3 eggs and 3 bananas** from the same shop. The price moves a little
@@ -105,6 +110,8 @@ interface Settings {
   lowBalance: number;               // paise; warn at or below this
   theme: 'system' | 'light' | 'dark';
   lastBackupAt: number | null;
+  shopPhone: string;                // 1.1.1: shopkeeper's WhatsApp, digits with country code ("919876543210"), '' = not set
+  sendToShop: boolean;              // 1.1.1: remembered "Send to shop on WhatsApp" choice
 }
 
 interface AppData {
@@ -243,6 +250,7 @@ are used only for low/negative balance, always with an icon and text.
 │   ├── main.ts               boot: load data, theme, router, service worker
 │   ├── domain/               PURE logic (unit tested)
 │   │   ├── types.ts  money.ts  dates.ts  ledger.ts  defaults.ts  sample.ts
+│   │   └── share.ts          1.1.1: WhatsApp message + statement text, phone number cleanup
 │   ├── data/
 │   │   ├── storage.ts        localStorage load / validate / migrate / save
 │   │   └── store.ts          state container + actions (add, update, delete, undo…)
@@ -251,6 +259,7 @@ are used only for low/negative balance, always with an icon and text.
 │   │   ├── icons.ts  router.ts  lifecycle.ts  sheet.ts  toast.ts  confirm.ts
 │   │   └── charts/           lineChart.ts  barChart.ts  sparkline.ts  chartCard.ts  scale.ts
 │   ├── screens/              home.ts  history.ts  insights.ts  settings.ts  entrySheet.ts  shared.ts
+│   │                         shop.ts (1.1.1: big-screen Shop view with keypad)
 │   └── styles/               tokens.css  base.css  layout.css  components.css  charts.css
 └── tests/                    ledger / money / dates tests (node --test, no extra packages)
 ```
@@ -263,8 +272,9 @@ added without redesigning the app.
 1. **Sync between devices / backup in the cloud.** Today the data lives on one device.
    If I want phone + laptop to share it, the plan is a small Cloudflare Worker + D1
    (same as the stopwatch project) behind `storage.ts`. Needs a decision on sign-in.
-2. **Shopkeeper access.** Should the shopkeeper see or confirm the log? That needs a
-   backend and sharing rules.
+2. **Shopkeeper's own live access.** 1.1.1 keeps the shopkeeper informed through
+   WhatsApp messages and the Shop view (§13). A link the shopkeeper opens on their own
+   phone would need a backend and sharing rules, so it is left out to stay simple.
 3. **Price per item.** The app records the **total** the shop charged, not separate egg
    and banana prices. Per-item prices would allow an "egg price trend" chart, but make
    daily logging slower.
@@ -277,3 +287,79 @@ added without redesigning the app.
    the `dist/` folder; `vite.config.ts` uses relative paths so either works.
 9. **iPhone home-screen icon.** iOS wants a PNG `apple-touch-icon`; only an SVG icon is
    included now.
+
+## 13. Version 1.1.1 — made for the shopkeeper too
+
+### Who uses it
+
+| Person | Tech comfort | What they need from the app |
+|---|---|---|
+| **Me (student)** | Comfortable | Fast daily logging, balance, charts, backup. |
+| **Shopkeeper** | WhatsApp, YouTube, UPI payments — nothing more | To **see** what I took and how much of my money they still hold, and to **type today's price** without learning an app. |
+
+**Rule for every shopkeeper-facing part: use only things they already know.**
+WhatsApp messages, big numbers, emoji pictures (🥚 🍌), and a calculator/UPI-style number pad.
+No menus, no settings, no sign-up, no new app to install on their phone.
+
+### What is new
+
+| Feature | For | How it works |
+|---|---|---|
+| **Shop view** (`#/shop`) | Shopkeeper (on my phone, at the counter) | A full-screen page with no navigation: "Money left with you" in huge digits, today's items as big emoji with − / + buttons, and a big number pad to type today's amount → one big **Save** button. After saving: a large ✓ with the new balance, **Send on WhatsApp**, **Done**, and a small "Made a mistake? Undo". If today is already saved, it shows that first, with **Add another**. |
+| **WhatsApp after each entry** | Shopkeeper | The entry sheet has a "Send to shop on WhatsApp" box (remembered). On Save it opens WhatsApp with a ready message: date, items, amount, money left with the shop. I only press Send in WhatsApp. |
+| **WhatsApp statement** | Both | History → **Send statement**: one message listing everything since the last time I gave money, with totals that add up: earlier balance + money given − taken = left. The shopkeeper can check it like a written account book. |
+| **Shopkeeper's number** | Me | Settings → Shop → WhatsApp number (10-digit Indian numbers get +91 automatically) and a "Send a test message" link. Without a number, WhatsApp asks which chat to use. |
+| **Quick amount chips** | Me | In the entry sheet, my last few daily amounts (₹36 · ₹38 · ₹42) are one tap away. |
+| **Version label** | Both | Settings shows the app version (1.1.1). |
+
+### How WhatsApp is reached (no server)
+
+```
+Save ─▶ store.addEntry() ─▶ share.ts builds plain text ─▶ open https://wa.me/<number>?text=<message>
+                                                          └▶ WhatsApp app (phone) / WhatsApp Web (laptop)
+```
+
+`wa.me` is WhatsApp's own "click to chat" link: no API key, no account, free. The message is
+built by pure functions in `src/domain/share.ts` (unit tested). WhatsApp is opened inside the
+same tap as Save, so browsers don't block it as a pop-up.
+
+Example message:
+
+```
+🛒 22 Oct
+Took: 🥚 Eggs × 3, 🍌 Bananas × 3
+Amount: ₹42
+Money left with you: ₹458
+```
+
+### Shop view layout (same on every screen size, centered, max ≈ 520 px)
+
+```
+┌──────────────────────────────┐
+│ ← Back            Murugan Stores │  small, for me
+│      Money left with you      │
+│            ₹458               │  huge
+├──────────────────────────────┤
+│  🥚   [ − ]   3   [ + ]       │  big touch targets (≥ 56 px)
+│  🍌   [ − ]   3   [ + ]       │
+├──────────────────────────────┤
+│  Today's amount      ₹ 42     │
+│   [1] [2] [3]                 │
+│   [4] [5] [6]                 │  calculator / UPI-style pad
+│   [7] [8] [9]                 │  (keyboard digits work on a laptop)
+│   [C] [0] [⌫]                 │
+│ [        ✓  Save        ]     │
+└──────────────────────────────┘
+```
+
+### Data changes
+
+Two optional settings (`shopPhone`, `sendToShop`). Old data and old backups load unchanged —
+missing fields get defaults — so the schema version stays `1`.
+
+### Still left out on purpose (kept simple)
+
+- **Tamil / other language** for the Shop view and messages — not decided which language; the
+  Shop view leans on numbers and emoji so it works meanwhile.
+- **UPI "pay the shop" button** — paying stays in the UPI app the shopkeeper already trusts.
+- **A live link for the shopkeeper** — needs a server (§12.2).

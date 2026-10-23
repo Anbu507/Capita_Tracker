@@ -2,6 +2,7 @@
 import { formatRelativeDay } from '../domain/dates.ts';
 import type { LedgerRow } from '../domain/ledger.ts';
 import { formatCompact, formatMoney, formatSigned } from '../domain/money.ts';
+import { whatsAppLink } from '../domain/share.ts';
 import type { EntryItem, Paise } from '../domain/types.ts';
 import { getData } from '../data/store.ts';
 import { h, type Child } from '../ui/dom.ts';
@@ -13,6 +14,11 @@ export const signedMoney = (p: Paise) => formatSigned(p, getData().settings.curr
 export const compactMoney = (p: Paise) => formatCompact(p, getData().settings.currency);
 /** Averages rounded to whole rupees — "₹37", not "₹37.29". */
 export const approxMoney = (p: Paise) => money(Math.round(p / 100) * 100);
+
+/** Opens WhatsApp with the message ready; the person still presses Send there. Call it inside the tap. */
+export function openWhatsApp(text: string): void {
+  window.open(whatsAppLink(text, getData().settings.shopPhone), '_blank', 'noopener');
+}
 
 /** "🥚 3 · 🍌 3" */
 export function itemsSummary(items: EntryItem[]): string {

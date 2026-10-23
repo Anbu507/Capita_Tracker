@@ -37,6 +37,7 @@
 
   /* Status — only for balance state, always with an icon + words */
   --good-text: #006300;
+  --good-wash: rgba(12, 163, 12, 0.12);
   --warning: #fab219;
   --warning-text: #7a4f00;
   --warning-wash: #fff5df;
@@ -92,6 +93,7 @@
     --series-wash: rgba(57, 135, 229, 0.14);
     --series-muted: #6b6a65;
     --good-text: #0ca30c;
+    --good-wash: rgba(12, 163, 12, 0.18);
     --warning-text: #fab219;
     --warning-wash: rgba(250, 178, 25, 0.12);
     --critical-text: #f07d7d;
@@ -127,6 +129,7 @@
   --series-wash: rgba(57, 135, 229, 0.14);
   --series-muted: #6b6a65;
   --good-text: #0ca30c;
+  --good-wash: rgba(12, 163, 12, 0.18);
   --warning-text: #fab219;
   --warning-wash: rgba(250, 178, 25, 0.12);
   --critical-text: #f07d7d;

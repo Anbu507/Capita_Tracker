@@ -61,6 +61,8 @@ function cleanSettings(v: unknown): Settings {
     lowBalance: low >= 0 ? low : d.lowBalance,
     theme: v.theme === 'light' || v.theme === 'dark' ? v.theme : 'system',
     lastBackupAt: int(v.lastBackupAt) > 0 ? int(v.lastBackupAt) : null,
+    shopPhone: str(v.shopPhone, 20).replace(/\D/g, ''),
+    sendToShop: v.sendToShop === true,
   };
 }
 
