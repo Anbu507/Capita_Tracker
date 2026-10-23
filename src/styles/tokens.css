@@ -1,0 +1,138 @@
+/* Design tokens. Every color is a role; dark mode re-steps the same roles (validated for contrast). */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --page: #f4f4f1;
+  --surface: #fcfcfb;
+  --surface-2: #f0efec;
+  --surface-3: #e6e5e0;
+  --scrim: rgba(11, 11, 11, 0.42);
+
+  /* Ink */
+  --text: #0b0b0b;
+  --text-2: #52514e;
+  --text-muted: #6b6a65;
+
+  /* Lines */
+  --border: rgba(11, 11, 11, 0.1);
+  --border-strong: rgba(11, 11, 11, 0.2);
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+
+  /* Accent (blue ramp) */
+  --accent: #2a78d6;
+  --accent-text: #1c5cab;
+  --accent-btn: #2a78d6;
+  --accent-btn-hover: #256abf;
+  --accent-soft: #cde2fb;
+  --accent-wash: rgba(42, 120, 214, 0.1);
+  --on-accent: #ffffff;
+
+  /* Charts */
+  --series: #2a78d6;
+  --series-wash: rgba(42, 120, 214, 0.1);
+  --series-muted: #a9a8a1;
+
+  /* Status — only for balance state, always with an icon + words */
+  --good-text: #006300;
+  --warning: #fab219;
+  --warning-text: #7a4f00;
+  --warning-wash: #fff5df;
+  --critical: #d03b3b;
+  --critical-text: #b02a2a;
+  --critical-wash: #fdeeee;
+  --info-wash: #eef4fc;
+
+  /* Shape & depth */
+  --radius-s: 10px;
+  --radius: 16px;
+  --radius-l: 22px;
+  --shadow-1: 0 1px 2px rgba(11, 11, 11, 0.04), 0 2px 8px rgba(11, 11, 11, 0.04);
+  --shadow-2: 0 18px 50px rgba(11, 11, 11, 0.18);
+  --shadow-fab: 0 6px 18px rgba(42, 120, 214, 0.42);
+
+  /* Type */
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --fast: 140ms;
+  --medium: 220ms;
+
+  /* Layout */
+  --tabbar-h: 64px;
+  --gutter: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #242423;
+    --surface-3: #2f2f2d;
+    --scrim: rgba(0, 0, 0, 0.6);
+    --text: #f0efec;
+    --text-2: #c3c2b7;
+    --text-muted: #9c9b92;
+    --border: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.2);
+    --grid: #2c2c2a;
+    --axis: #45453f;
+    --accent: #3987e5;
+    --accent-text: #86b6ef;
+    --accent-btn: #2a78d6;
+    --accent-btn-hover: #3987e5;
+    --accent-soft: #173a63;
+    --accent-wash: rgba(57, 135, 229, 0.16);
+    --series: #3987e5;
+    --series-wash: rgba(57, 135, 229, 0.14);
+    --series-muted: #6b6a65;
+    --good-text: #0ca30c;
+    --warning-text: #fab219;
+    --warning-wash: rgba(250, 178, 25, 0.12);
+    --critical-text: #f07d7d;
+    --critical-wash: rgba(208, 59, 59, 0.16);
+    --info-wash: rgba(57, 135, 229, 0.12);
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-2: 0 18px 50px rgba(0, 0, 0, 0.6);
+    --shadow-fab: 0 6px 18px rgba(0, 0, 0, 0.5);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #242423;
+  --surface-3: #2f2f2d;
+  --scrim: rgba(0, 0, 0, 0.6);
+  --text: #f0efec;
+  --text-2: #c3c2b7;
+  --text-muted: #9c9b92;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --grid: #2c2c2a;
+  --axis: #45453f;
+  --accent: #3987e5;
+  --accent-text: #86b6ef;
+  --accent-btn: #2a78d6;
+  --accent-btn-hover: #3987e5;
+  --accent-soft: #173a63;
+  --accent-wash: rgba(57, 135, 229, 0.16);
+  --series: #3987e5;
+  --series-wash: rgba(57, 135, 229, 0.14);
+  --series-muted: #6b6a65;
+  --good-text: #0ca30c;
+  --warning-text: #fab219;
+  --warning-wash: rgba(250, 178, 25, 0.12);
+  --critical-text: #f07d7d;
+  --critical-wash: rgba(208, 59, 59, 0.16);
+  --info-wash: rgba(57, 135, 229, 0.12);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 18px 50px rgba(0, 0, 0, 0.6);
+  --shadow-fab: 0 6px 18px rgba(0, 0, 0, 0.5);
+}

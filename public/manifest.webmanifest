@@ -1,0 +1,14 @@
+{
+  "name": "Capital Tracker",
+  "short_name": "Capital",
+  "description": "Track the money you prepaid at the shop and what is left.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f4f1",
+  "theme_color": "#2a78d6",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

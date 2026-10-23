@@ -1,0 +1,250 @@
+/* Chart marks follow one spec everywhere: hairline solid grid, 2px lines, thin rounded columns,
+   10% area wash, text in ink tokens (never the series color). */
+
+.chart-body,
+.chart-wrap {
+  position: relative;
+}
+
+.chart {
+  display: block;
+  overflow: visible;
+  font-family: var(--font);
+}
+
+.gridline {
+  stroke: var(--grid);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.baseline {
+  stroke: var(--axis);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+  fill: var(--text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.series-line {
+  fill: none;
+  stroke: var(--series);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.series-area {
+  fill: var(--series-wash);
+}
+
+.end-dot,
+.focus-dot {
+  fill: var(--series);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.end-label {
+  font-size: 12px;
+  font-weight: 650;
+  fill: var(--text);
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.ref-line {
+  stroke: var(--text-2);
+  stroke-width: 1;
+  opacity: 0.6;
+  shape-rendering: crispEdges;
+}
+
+.crosshair {
+  stroke: var(--axis);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+  pointer-events: none;
+}
+
+.focus-dot {
+  pointer-events: none;
+}
+
+.chart-hit {
+  fill: transparent;
+  cursor: crosshair;
+  touch-action: pan-y;
+  outline: none;
+}
+
+.chart-hit:focus-visible {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.bar {
+  fill: var(--series);
+  transition: opacity var(--fast) var(--ease);
+}
+
+.bar-zero {
+  fill: var(--axis);
+}
+
+.has-active .bar:not(.is-active) {
+  opacity: 0.35;
+}
+
+/* Entry animations (first draw only; disabled by prefers-reduced-motion) */
+
+.is-animated .series-line,
+.is-animated .spark-line {
+  stroke-dasharray: 1;
+  animation: draw-line 900ms var(--ease) both;
+}
+
+.is-animated .series-area,
+.is-animated .end-dot,
+.is-animated .end-label,
+.is-animated .ref {
+  animation: fade-in 400ms var(--ease) 500ms both;
+}
+
+.is-animated .bar {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: grow-bar 520ms var(--ease) both;
+}
+
+@keyframes draw-line {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes grow-bar {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+/* Sparkline */
+
+.sparkline {
+  display: block;
+  overflow: visible;
+}
+
+.spark-line {
+  fill: none;
+  stroke: var(--series-muted);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* Tooltip: value first and strong, label after. */
+
+.chart-tooltip {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  top: 0;
+  display: grid;
+  gap: 1px;
+  min-width: 92px;
+  padding: 8px 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow-2);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -100%);
+  transition: opacity 120ms var(--ease);
+}
+
+.chart-tooltip.is-below {
+  transform: translate(-50%, 0);
+}
+
+.chart-tooltip.is-visible {
+  opacity: 1;
+}
+
+.tt-value {
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.tt-label {
+  color: var(--text-2);
+  font-size: 0.75rem;
+}
+
+.tt-detail {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+/* Table view (the accessible twin of each chart) */
+
+.chart-table {
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-weight: 400;
+}
+
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.data-table tbody th {
+  font-weight: 550;
+}
+
+.data-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table tbody tr:last-child > * {
+  border-bottom: 0;
+}

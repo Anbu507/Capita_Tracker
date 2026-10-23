@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f4f4f1" />
+    <meta name="description" content="Track the money you prepaid at the shop: log daily purchases and always know what is left." />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Capital" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <title>Capital Tracker</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#outlet">Skip to content</a>
+    <div class="app">
+      <nav id="nav" class="nav" aria-label="Main"></nav>
+      <main id="outlet" class="main" tabindex="-1"></main>
+    </div>
+    <div id="toast-region" class="toast-region" aria-live="polite"></div>
+    <noscript>Capital Tracker needs JavaScript to run.</noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
