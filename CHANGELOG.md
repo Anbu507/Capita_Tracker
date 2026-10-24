@@ -1,5 +1,11 @@
 # Changelog
 
+## Online
+
+Since 1.1.2 the app is published at https://anbu507.github.io/Capita_Tracker/ (GitHub Pages),
+so it works on mobile data and can be added to the phone's home screen. Every push to `main`
+publishes again.
+
 ## 1.1.2 — button fix on phones
 
 - Home: on phones, "Add what I bought" and "Add money I gave" now sit one per row, full width,

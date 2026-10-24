@@ -41,12 +41,14 @@ on the same Wi-Fi can open the "Network" address too.
 
 Desktop shortcut: press **N** to add what you bought.
 
-## Install on a phone
+## Open it on your phone
 
-The app is a PWA. Once it's hosted over HTTPS (see below), open it in Chrome on the phone →
-menu → **Add to Home screen**. It then opens full-screen and works without internet.
+**Live app: https://anbu507.github.io/Capita_Tracker/** — works on any internet (Wi-Fi or
+mobile data), and after the first visit it opens even with no internet.
 
-## Hosting (not done yet)
+1. Open the link in Chrome on the phone.
+2. Tap **⋮ → Add to Home screen** (or **Install app**). It now opens like a normal app.
+3. Your list stays **only on that phone**. Use Settings → **Save a copy** now and then.
 
-`npm run build` makes a static `dist/` folder that any free static host can serve,
-for example Cloudflare Pages or GitHub Pages. Paths are relative, so a sub-folder works too.
+Every push to `main` publishes the new version automatically
+(`.github/workflows/deploy.yml`, GitHub Pages, free).

@@ -278,8 +278,8 @@ added without redesigning the app.
    needs a server; a simple in-app reminder is already on Home.
 6. **CSV / Excel export.** JSON backup only for now.
 7. **App lock (PIN).** Not added; the phone lock protects it.
-8. **Hosting.** Not deployed yet. Cloudflare Pages or GitHub Pages (both free) can host
-   the `dist/` folder; `vite.config.ts` uses relative paths so either works.
+8. **Hosting.** Done after 1.1.2: GitHub Pages publishes `dist/` on every push to `main`
+   (`.github/workflows/deploy.yml`) at https://anbu507.github.io/Capita_Tracker/.
 9. **iPhone home-screen icon.** iOS wants a PNG `apple-touch-icon`; only an SVG icon is
    included now.
 
