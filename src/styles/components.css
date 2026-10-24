@@ -297,16 +297,25 @@
   font-size: 0.9375rem;
 }
 
+/* Phones: one full-width button per row, so the plain-word labels always fit inside the box.
+   Side by side only where two columns have room for them. */
 .hero-actions {
   display: grid;
-  grid-template-columns: 1.35fr 1fr;
+  grid-template-columns: 1fr;
   gap: 10px;
 }
 
-@media (max-width: 380px) {
+@media (min-width: 600px) {
   .hero-actions {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+.hero-actions .btn {
+  min-width: 0;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
 }
 
 @media (min-width: 1100px) {

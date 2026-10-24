@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.2 — button fix on phones
+
+- Home: on phones, "Add what I bought" and "Add money I gave" now sit one per row, full width,
+  inside the box. Before, "Add money I gave" stuck out past the edge on most phones (the
+  plain-word labels from 1.1.1 are longer) and the page slid sideways. On screens 600 px and
+  wider they stay side by side.
+
 ## 1.1.1 — simple, everyday words
 
 Same app as 1.0.0; only the words changed, so anyone (including the shopkeeper) can read it.

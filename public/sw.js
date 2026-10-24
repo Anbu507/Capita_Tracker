@@ -1,6 +1,6 @@
 // Offline support: serve the app shell from cache, refresh it in the background (stale-while-revalidate).
 // Bump CACHE when this file's logic changes; hashed asset names take care of normal releases.
-const CACHE = 'capital-tracker-v1.1.1';
+const CACHE = 'capital-tracker-v1.1.2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', (event) => {
