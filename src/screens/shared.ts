@@ -83,13 +83,13 @@ export function notice(kind: 'info' | 'warning' | 'critical' | 'good', iconName:
 export function entryRow(row: LedgerRow, onOpen: () => void): HTMLElement {
   const e = row.entry;
   const isTopUp = e.kind === 'topup';
-  const what = isTopUp ? 'Added money' : itemsSummary(e.items) || 'Purchase';
+  const what = isTopUp ? 'Money given' : itemsSummary(e.items) || 'Bought';
   return h(
     'li',
     null,
     h(
       'button',
-      { class: 'entry-row', type: 'button', onClick: onOpen, 'aria-label': `${formatRelativeDay(e.date)}, ${isTopUp ? 'added' : 'spent'} ${money(e.amount)}. Edit` },
+      { class: 'entry-row', type: 'button', onClick: onOpen, 'aria-label': `${formatRelativeDay(e.date)}, ${isTopUp ? 'gave' : 'spent'} ${money(e.amount)}. Tap to change` },
       h('span', { class: `entry-badge ${isTopUp ? 'is-topup' : ''}`, 'aria-hidden': 'true' }, icon(isTopUp ? 'wallet' : 'bag', 18)),
       h(
         'span',

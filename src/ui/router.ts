@@ -5,7 +5,7 @@ export type Route = 'home' | 'history' | 'insights' | 'settings';
 export const ROUTES: { id: Route; label: string; hash: string }[] = [
   { id: 'home', label: 'Home', hash: '#/' },
   { id: 'history', label: 'History', hash: '#/history' },
-  { id: 'insights', label: 'Insights', hash: '#/insights' },
+  { id: 'insights', label: 'Charts', hash: '#/insights' },
   { id: 'settings', label: 'Settings', hash: '#/settings' },
 ];
 

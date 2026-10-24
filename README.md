@@ -6,7 +6,9 @@ and charts of the balance and spending.
 
 - Works on phone, tablet and desktop (one responsive app).
 - No account, no server, works offline; data stays in this browser (export a backup in Settings).
-- Design and decisions: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- **1.1.1:** every screen uses simple, everyday words ("Money left", "Add what I bought") so anyone
+  — including the shopkeeper — can read it.
+- Design and decisions: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · changes: [CHANGELOG.md](CHANGELOG.md).
 
 ## Run it
 
@@ -14,6 +16,9 @@ and charts of the balance and spending.
 npm install
 npm run dev
 ```
+
+On Windows PowerShell, if `npm` is blocked ("running scripts is disabled"), use `npm.cmd`
+instead: `npm.cmd install`, `npm.cmd run dev`.
 
 Open the address Vite prints (for example `http://localhost:5173`). `--host` is on, so a phone
 on the same Wi-Fi can open the "Network" address too.
@@ -27,14 +32,14 @@ on the same Wi-Fi can open the "Network" address too.
 
 ## Daily use
 
-1. **First time:** Home → **Add money** → the amount you gave the shop.
-2. **Every day:** tap **＋** → eggs 3 and bananas 3 are already filled in → type what the shop
-   charged → **Save purchase**.
-3. **When the balance is low** (warning at ₹100 by default; change it in Settings): give the shop
-   money again and log it with **Add money**.
-4. **Now and then:** Settings → **Download backup**.
+1. **First time:** Home → **Add money I gave** → the amount you gave the shop.
+2. **Every day:** tap **＋** (Add what I bought) → eggs 3 and bananas 3 are already filled in →
+   type how much it cost → **Save**.
+3. **When money is running low** (warning at ₹100; change it in Settings): give the shop money
+   again and add it with **Add money I gave**.
+4. **Now and then:** Settings → **Save a copy**.
 
-Desktop shortcut: press **N** to log a purchase.
+Desktop shortcut: press **N** to add what you bought.
 
 ## Install on a phone
 

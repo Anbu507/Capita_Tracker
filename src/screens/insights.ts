@@ -32,11 +32,11 @@ export function insightsScreen(data: AppData): HTMLElement {
   const screen = h(
     'div',
     { class: 'screen' },
-    screenHeader('Insights', 'How your money at the shop is used'),
+    screenHeader('Charts', 'Where your money went'),
   );
 
   if (!data.entries.length) {
-    screen.append(h('section', { class: 'card' }, emptyState('No data yet', 'Charts appear once you add money and log a few purchases.')));
+    screen.append(h('section', { class: 'card' }, emptyState('Nothing to show yet', 'Charts show up after you add the money you gave and a few days of buying.')));
     return screen;
   }
 
@@ -51,7 +51,7 @@ export function insightsScreen(data: AppData): HTMLElement {
     const bucket = bucketFor(days);
     const buckets = spendBuckets(data.entries, start, end, bucket);
     const per = bucket === 'day' ? 'day' : bucket === 'week' ? 'week' : 'month';
-    // Average over buckets that had a purchase, so "per day" matches the "Usual day" tile.
+    // Average over buckets that had a purchase, so "each day" matches the "Daily cost" tile.
     const shopBuckets = buckets.filter((b) => b.spent > 0);
     const avgPerBucket = shopBuckets.length ? Math.round(totals.spent / shopBuckets.length) : 0;
     note.textContent = start === end ? formatRowDate(end) : `${formatDayMonth(start)} – ${formatDayMonth(end)}`;
@@ -59,14 +59,14 @@ export function insightsScreen(data: AppData): HTMLElement {
     const kpis = h(
       'section',
       { class: 'stats-grid stats-grid-wide', 'aria-label': 'Totals for the selected period' },
-      statTile('Spent', money(totals.spent), `${totals.purchaseDays} of ${days} days`),
-      statTile('Money added', money(totals.added), totals.added ? undefined : 'none in this period'),
-      statTile('Usual day', stats ? approxMoney(stats.average) : '—', stats && stats.min !== stats.max ? `${money(stats.min)}–${money(stats.max)}` : undefined),
+      statTile('Spent', money(totals.spent), `on ${totals.purchaseDays} of ${days} days`),
+      statTile('Money given', money(totals.added), totals.added ? undefined : 'none in these days'),
+      statTile('Daily cost', stats ? approxMoney(stats.average) : '—', stats && stats.min !== stats.max ? `${money(stats.min)} to ${money(stats.max)}` : undefined),
       ...totals.items.map((i) => statTile(`${i.emoji} ${i.name}`, String(i.qty), 'bought')),
     );
 
     const balanceCard = chartCard({
-      title: 'Balance over time',
+      title: 'Money left, day by day',
       subtitle: 'Money left at the shop at the end of each day',
       height: 220,
       draw: (width, animate) =>
@@ -75,28 +75,28 @@ export function insightsScreen(data: AppData): HTMLElement {
           width,
           height: 220,
           animate,
-          ariaLabel: `Line chart of the balance from ${formatDayMonth(start)} to ${formatDayMonth(end)}`,
+          ariaLabel: `Line chart of money left from ${formatDayMonth(start)} to ${formatDayMonth(end)}`,
           formatValue: money,
           formatTick: compactMoney,
         }),
-      table: () => dataTable(['Day', 'Balance'], [...series].reverse().map((p) => [formatRowDate(p.date), money(p.balance)])),
+      table: () => dataTable(['Day', 'Money left'], [...series].reverse().map((p) => [formatRowDate(p.date), money(p.balance)])),
     });
 
     const spendCard = chartCard({
-      title: `Spend per ${per}`,
-      subtitle: avgPerBucket ? `Line shows the usual ${per} you shop (${approxMoney(avgPerBucket)})` : undefined,
+      title: `Money spent each ${per}`,
+      subtitle: avgPerBucket ? `The line is a normal ${per} (${approxMoney(avgPerBucket)})` : undefined,
       height: 220,
       draw: (width, animate) =>
         barChart({
           bars: buckets.map((b) => ({
             ...bucketLabel(b, bucket),
             value: b.spent,
-            detail: b.purchases ? itemsSummary(b.items) : 'No purchase',
+            detail: b.purchases ? itemsSummary(b.items) : 'Nothing bought',
           })),
           width,
           height: 220,
           animate,
-          ariaLabel: `Column chart of spend per ${per}`,
+          ariaLabel: `Column chart of money spent each ${per}`,
           formatValue: money,
           formatTick: compactMoney,
           average: avgPerBucket,

@@ -25,13 +25,13 @@ export function historyScreen(data: AppData): HTMLElement {
                 h('h2', null, formatMonth(g.key)),
                 h('p', null,
                   h('span', null, `Spent ${money(g.spent)}`),
-                  g.added > 0 && h('span', { class: 'is-positive' }, `Added ${money(g.added)}`))),
+                  g.added > 0 && h('span', { class: 'is-positive' }, `Given ${money(g.added)}`))),
               h('ul', { class: 'entry-list' }, g.rows.map((r) => entryRow(r, () => openEntrySheet({ entry: r.entry }))))))
         : [h('section', { class: 'card' },
             data.entries.length
-              ? emptyState('Nothing here', filter === 'topup' ? 'No money added yet.' : 'No purchases logged yet.')
-              : emptyState('No history yet', 'Your purchases and the money you add will show up here, newest first.',
-                  h('button', { class: 'btn btn-primary', type: 'button', onClick: () => openEntrySheet({ kind: 'purchase' }) }, icon('plus'), 'Log a purchase')))]),
+              ? emptyState('Nothing here', filter === 'topup' ? 'No money given yet.' : 'Nothing bought yet.')
+              : emptyState('No history yet', 'What you buy and the money you give will show here, newest first.',
+                  h('button', { class: 'btn btn-primary', type: 'button', onClick: () => openEntrySheet({ kind: 'purchase' }) }, icon('plus'), 'Add what I bought')))]),
     );
   };
   renderList();
@@ -39,12 +39,12 @@ export function historyScreen(data: AppData): HTMLElement {
   return h(
     'div',
     { class: 'screen' },
-    screenHeader('History', `${data.entries.length} ${data.entries.length === 1 ? 'entry' : 'entries'}`),
+    screenHeader('History', `${data.entries.length} saved`),
     h('div', { class: 'filter-row' },
       segmented<Filter>('Show', [
         { id: 'all', label: 'All' },
-        { id: 'purchase', label: 'Purchases' },
-        { id: 'topup', label: 'Money added' },
+        { id: 'purchase', label: 'Bought' },
+        { id: 'topup', label: 'Money given' },
       ], filter, (v) => {
         filter = v;
         renderList();

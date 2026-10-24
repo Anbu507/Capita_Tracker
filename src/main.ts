@@ -50,13 +50,13 @@ function buildNav(): void {
       h('img', { src: './icon.svg', alt: '', width: 32, height: 32 }),
       h('span', null, 'Capital Tracker')),
     h('div', { class: 'nav-actions' },
-      h('button', { class: 'btn btn-primary btn-block', type: 'button', onClick: () => openEntrySheet({ kind: 'purchase' }) }, icon('plus'), 'Log purchase'),
-      h('button', { class: 'btn btn-secondary btn-block', type: 'button', onClick: () => openEntrySheet({ kind: 'topup' }) }, icon('wallet'), 'Add money')),
+      h('button', { class: 'btn btn-primary btn-block', type: 'button', onClick: () => openEntrySheet({ kind: 'purchase' }) }, icon('plus'), 'Add what I bought'),
+      h('button', { class: 'btn btn-secondary btn-block', type: 'button', onClick: () => openEntrySheet({ kind: 'topup' }) }, icon('wallet'), 'Add money I gave')),
     h('ul', { class: 'nav-links' },
       link(home),
       link(history),
       h('li', { class: 'nav-fab-slot' },
-        h('button', { class: 'nav-fab', type: 'button', 'aria-label': 'Log a purchase', onClick: () => openEntrySheet({ kind: 'purchase' }) }, icon('plus', 26))),
+        h('button', { class: 'nav-fab', type: 'button', 'aria-label': 'Add what I bought', onClick: () => openEntrySheet({ kind: 'purchase' }) }, icon('plus', 26))),
       link(insights),
       link(settings)),
   );
@@ -119,7 +119,7 @@ subscribe((data) => {
   render();
   if (lastSaveFailed() && !warnedSave) {
     warnedSave = true;
-    toast('Could not save on this device. Storage may be full or blocked.', undefined, 8000);
+    toast('Could not save. The phone may be full.', undefined, 8000);
   }
 });
 onRouteChange(navigate);
@@ -129,14 +129,14 @@ requestPersistence();
 if (!result.ok) {
   toast(
     result.reason === 'unavailable'
-      ? 'This browser is blocking storage, so entries will not be saved.'
-      : 'Saved data could not be read. A copy was kept; starting fresh.',
+      ? 'This browser is not letting the app save, so nothing will be kept.'
+      : 'Old data could not be opened, so the app started fresh. The old data was kept aside.',
     undefined,
     10000,
   );
 }
 
-// Keyboard shortcut on desktop: "n" opens a new purchase.
+// Keyboard shortcut on desktop: "n" opens "Add what I bought".
 window.addEventListener('keydown', (e) => {
   const t = e.target as HTMLElement;
   if (e.key !== 'n' || e.ctrlKey || e.metaKey || e.altKey || t.closest('input, textarea, select, dialog')) return;

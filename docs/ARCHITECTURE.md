@@ -1,5 +1,10 @@
 # Capital Tracker — Architecture
 
+| Version | What it is |
+|---|---|
+| **1.0.0** (git tag `v1.0.0`) | Base version: balance, daily log, history, charts, backup. |
+| **1.1.1** (this) | The same app with **every screen in simple, everyday words**, so someone who only uses WhatsApp, YouTube and UPI can read it. See [§13](#13-version-111--simple-everyday-words). No features added or removed. |
+
 ## 1. The problem
 
 Every day I buy **3 eggs and 3 bananas** from the same shop. The price moves a little
@@ -277,3 +282,50 @@ added without redesigning the app.
    the `dist/` folder; `vite.config.ts` uses relative paths so either works.
 9. **iPhone home-screen icon.** iOS wants a PNG `apple-touch-icon`; only an SVG icon is
    included now.
+
+## 13. Version 1.1.1 — simple, everyday words
+
+### Why
+
+Two people look at this app: me (comfortable with apps) and the shopkeeper, who uses only
+WhatsApp, YouTube and UPI. Words like *balance*, *top-up*, *log a purchase*, *insights*,
+*backup* or *restore* are app/bank words. 1.1.1 changes only the **words** on the screen — the
+screens, data and calculations are exactly the same as 1.0.0.
+
+### Rules for any text in the app
+
+1. Use words people say out loud at a shop: *money left*, *I gave money*, *what I bought*.
+2. One thing = one word, everywhere (never "Added money" on one screen and "Top-up" on another).
+3. Short sentences. Say what to do next ("Give the shop money soon.").
+4. No symbols that need explaining (≈ was removed; "about 14" instead).
+
+### Word list
+
+| Old word (1.0.0) | Simple word (1.1.1) |
+|---|---|
+| Balance | **Money left** |
+| Add money / Top-up / Money added | **Add money I gave** / **Money given** |
+| Purchase / Log a purchase | **Add what I bought** / **Bought** |
+| New entry / Edit purchase | **Add** / **Change what I bought** |
+| Amount the shop charged | **How much it cost** |
+| Usual day (average) | **Daily cost** · "Normally ₹38 to ₹44" |
+| ≈ 14 days left at your usual day | **Enough for about 14 more days** |
+| Low balance — top up soon | **Money is running low — give the shop money soon** |
+| Recent / All history | **Latest** / **See all** |
+| Insights | **Charts** |
+| Balance over time / Spend per day | **Money left, day by day** / **Money spent each day** |
+| Table | **Numbers** |
+| Backup / Download backup / Restore | **Save a copy** / **Bring back a copy** |
+| Load sample data / Erase everything | **Show an example** / **Delete everything** |
+| Currency / Theme (System) | **Money type** / **Colour (Auto)** |
+| works offline | **works without internet** |
+
+The words live in the screen files (`src/screens/*.ts`, plus the navigation labels in
+`src/main.ts` and `src/ui/router.ts`). Nothing in `src/domain` changed.
+
+### Still open
+
+- **Tamil (or another language).** Plain English first; a translation can follow the same
+  word list once the language is decided.
+- An earlier 1.1.1 attempt with WhatsApp messages and a separate Shop view was set aside to keep
+  the app simple. It is kept in git under the tag `v1.1.1-whatsapp` and is not part of this version.

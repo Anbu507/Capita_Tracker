@@ -10,7 +10,7 @@ export function exportBackup(): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `capital-tracker-backup-${today()}.json`;
+  a.download = `capital-tracker-copy-${today()}.json`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -19,14 +19,14 @@ export function exportBackup(): void {
 
 /** Reads and validates a backup file. Throws with a readable message when it isn't one. */
 export async function readBackup(file: File): Promise<AppData> {
-  if (file.size > 5_000_000) throw new Error('That file is too large to be a Capital Tracker backup.');
+  if (file.size > 5_000_000) throw new Error('This file is too big to be a copy from this app.');
   let raw: unknown;
   try {
     raw = JSON.parse(await file.text());
   } catch {
-    throw new Error('That file is not valid JSON.');
+    throw new Error('This file could not be opened.');
   }
   const data = parseData(raw);
-  if (!data) throw new Error('That file is not a Capital Tracker backup.');
+  if (!data) throw new Error('This is not a copy from this app.');
   return data;
 }

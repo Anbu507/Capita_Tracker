@@ -23,7 +23,7 @@ function field(label: string, id: string, control: HTMLElement, hint?: string): 
 }
 
 function itemRow(item: Item): HTMLElement {
-  const emoji = h('input', { id: `item-emoji-${item.id}`, class: 'emoji-input', value: item.emoji, maxlength: 8, 'aria-label': `Emoji for ${item.name}` });
+  const emoji = h('input', { id: `item-emoji-${item.id}`, class: 'emoji-input', value: item.emoji, maxlength: 8, 'aria-label': `Picture for ${item.name}` });
   emoji.addEventListener('change', () => updateItem(item.id, { emoji: emoji.value.trim() || '🛒' }));
   const name = h('input', { id: `item-name-${item.id}`, value: item.name, maxlength: 40, 'aria-label': 'Item name' });
   name.addEventListener('change', () => {
@@ -35,7 +35,7 @@ function itemRow(item: Item): HTMLElement {
   return h('li', { class: 'settings-item' },
     emoji,
     name,
-    h('div', { class: 'stepper', role: 'group', 'aria-label': `Usual quantity of ${item.name}` },
+    h('div', { class: 'stepper', role: 'group', 'aria-label': `Daily count of ${item.name}` },
       h('button', { id: `item-minus-${item.id}`, type: 'button', class: 'icon-btn', 'aria-label': 'Less', onClick: () => setQty(-1) }, icon('minus', 18)),
       h('output', { class: 'stepper-value' }, String(item.defaultQty)),
       h('button', { id: `item-plus-${item.id}`, type: 'button', class: 'icon-btn', 'aria-label': 'More', onClick: () => setQty(1) }, icon('plus', 18))),
@@ -46,7 +46,7 @@ function itemRow(item: Item): HTMLElement {
       onClick: async () => {
         const ok = await confirmDialog({
           title: `Remove ${item.name}?`,
-          message: 'It will no longer appear when you log a purchase. Past entries keep it.',
+          message: 'It will not show when you add what you bought. Old days keep it.',
           confirmLabel: 'Remove',
           danger: true,
         });
@@ -82,23 +82,23 @@ export function settingsScreen(data: AppData): HTMLElement {
     try {
       const backup = await readBackup(file);
       const ok = await confirmDialog({
-        title: 'Restore this backup?',
-        message: `It has ${backup.entries.length} entries. Everything currently on this device (${data.entries.length} entries) will be replaced.`,
-        confirmLabel: 'Restore',
+        title: 'Bring back this copy?',
+        message: `This copy has ${backup.entries.length} saved items. What is on this phone now (${data.entries.length} saved items) will be replaced by it.`,
+        confirmLabel: 'Bring back',
         danger: data.entries.length > 0,
       });
       if (ok) {
         replaceAll(backup);
-        toast(`Restored ${backup.entries.length} entries`);
+        toast(`Copy brought back: ${backup.entries.length} saved items`);
       }
     } catch (err) {
-      toast(err instanceof Error ? err.message : 'Could not read that file.');
+      toast(err instanceof Error ? err.message : 'Could not open that file.');
     }
   });
 
   const lastBackup = settings.lastBackupAt
-    ? `Last backup: ${new Date(settings.lastBackupAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
-    : 'No backup yet';
+    ? `Last copy saved: ${new Date(settings.lastBackupAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
+    : 'No copy saved yet';
 
   const activeItems = data.items.filter((i) => !i.archived);
 
@@ -109,15 +109,15 @@ export function settingsScreen(data: AppData): HTMLElement {
     h('div', { class: 'settings-grid' },
       section('Shop', null,
         field('Shop name', 'settings-shop', shop, 'Shown on the home screen.'),
-        field('Currency', 'settings-currency', currency),
-        field('Warn me when the balance is at or below', 'settings-low',
+        field('Money type', 'settings-currency', currency),
+        field('Warn me when money left is this much or less', 'settings-low',
           h('div', { class: 'amount-input' }, h('span', { class: 'amount-prefix', 'aria-hidden': 'true' }, currencySymbol(settings.currency)), low),
-          `Currently ${money(settings.lowBalance)}.`)),
+          `Now: ${money(settings.lowBalance)}`)),
 
-      section('What I buy', 'The usual quantity is filled in when you log a purchase.',
+      section('What I buy', 'How many I buy each day. It fills in by itself when I add what I bought.',
         activeItems.length
           ? h('ul', { class: 'settings-items' }, activeItems.map(itemRow))
-          : h('p', { class: 'muted' }, 'No items. Purchases will only record the amount.'),
+          : h('p', { class: 'muted' }, 'No items. Only the money will be saved.'),
         h('button', {
           class: 'btn btn-secondary',
           type: 'button',
@@ -127,23 +127,23 @@ export function settingsScreen(data: AppData): HTMLElement {
           },
         }, icon('plus'), 'Add item')),
 
-      section('Appearance', null,
+      section('Screen', null,
         h('div', { class: 'field' },
-          h('span', { class: 'field-label', id: 'theme-label' }, 'Theme'),
-          segmented<Theme>('Theme', [
-            { id: 'system', label: 'System' },
+          h('span', { class: 'field-label', id: 'theme-label' }, 'Colour'),
+          segmented<Theme>('Colour', [
+            { id: 'system', label: 'Auto' },
             { id: 'light', label: 'Light' },
             { id: 'dark', label: 'Dark' },
           ], settings.theme, (v) => updateSettings({ theme: v })))),
 
-      section('Backup', 'Your data is saved only in this browser on this device. Download a backup now and then.',
+      section('Save a copy', 'Your list is kept only on this phone. Save a copy now and then, so you never lose it.',
         h('p', { class: 'muted' }, lastBackup),
         h('div', { class: 'btn-row btn-row-start' },
-          h('button', { class: 'btn btn-secondary', type: 'button', onClick: () => { exportBackup(); toast('Backup downloaded'); } }, icon('download'), 'Download backup'),
-          h('button', { class: 'btn btn-secondary', type: 'button', onClick: () => fileInput.click() }, icon('upload'), 'Restore from file'),
+          h('button', { class: 'btn btn-secondary', type: 'button', onClick: () => { exportBackup(); toast('Copy saved'); } }, icon('download'), 'Save a copy'),
+          h('button', { class: 'btn btn-secondary', type: 'button', onClick: () => fileInput.click() }, icon('upload'), 'Bring back a copy'),
           fileInput)),
 
-      section('Data', null,
+      section('Start again', null,
         h('div', { class: 'btn-row btn-row-start' },
           h('button', {
             class: 'btn btn-secondary',
@@ -151,34 +151,34 @@ export function settingsScreen(data: AppData): HTMLElement {
             onClick: async () => {
               if (data.entries.length) {
                 const ok = await confirmDialog({
-                  title: 'Replace with sample data?',
-                  message: `Your ${data.entries.length} entries will be replaced by about two months of example data.`,
+                  title: 'Show an example?',
+                  message: `Your ${data.entries.length} saved items will be replaced by two months of example days.`,
                   confirmLabel: 'Replace',
                   danger: true,
                 });
                 if (!ok) return;
               }
               loadSample();
-              toast('Sample data loaded');
+              toast('Example added');
             },
-          }, 'Load sample data'),
+          }, 'Show an example'),
           h('button', {
             class: 'btn btn-danger-ghost',
             type: 'button',
             onClick: async () => {
               const ok = await confirmDialog({
-                title: 'Erase everything?',
-                message: 'All entries, items and settings on this device will be deleted. This cannot be undone unless you have a backup.',
-                confirmLabel: 'Erase everything',
+                title: 'Delete everything?',
+                message: 'Everything on this phone will be deleted. You cannot get it back unless you saved a copy.',
+                confirmLabel: 'Delete everything',
                 danger: true,
               });
               if (ok) {
                 eraseAll();
-                toast('All data erased');
+                toast('Everything deleted');
               }
             },
-          }, icon('trash', 18), 'Erase everything'))),
+          }, icon('trash', 18), 'Delete everything'))),
     ),
-    h('p', { class: 'about' }, 'Capital Tracker 1.0 · works offline · no account, no tracking'),
+    h('p', { class: 'about' }, `Capital Tracker · version ${__APP_VERSION__} · works without internet`),
   );
 }

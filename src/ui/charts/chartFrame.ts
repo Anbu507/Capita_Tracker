@@ -122,9 +122,9 @@ export function chartCard(opts: ChartCardOptions): HTMLElement {
   const tableWrap = h('div', { class: 'chart-table', hidden: true });
   const toggle = h(
     'button',
-    { class: 'chip chip-sm', type: 'button', 'aria-pressed': 'false', title: 'Show the numbers as a table' },
+    { class: 'chip chip-sm', type: 'button', 'aria-pressed': 'false', title: 'Show the numbers' },
     icon('table', 16),
-    'Table',
+    'Numbers',
   );
   toggle.addEventListener('click', () => {
     const showTable = toggle.getAttribute('aria-pressed') !== 'true';

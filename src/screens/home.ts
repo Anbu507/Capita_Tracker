@@ -37,14 +37,14 @@ export function homeScreen(data: AppData): HTMLElement {
       h('section', { class: 'card' },
         emptyState(
           'Start with the money you gave the shop',
-          'Add the fixed amount you paid in advance. Then log what you take each day, and the app keeps the balance for you.',
-          h('button', { class: 'btn btn-primary', type: 'button', onClick: () => openEntrySheet({ kind: 'topup' }) }, icon('wallet'), 'Add money'),
-          h('button', { class: 'btn btn-secondary', type: 'button', onClick: () => openEntrySheet({ kind: 'purchase' }) }, icon('plus'), 'Log a purchase'),
+          'First add the money you gave the shop. Then each day, add what you bought. The app shows how much money is left.',
+          h('button', { class: 'btn btn-primary', type: 'button', onClick: () => openEntrySheet({ kind: 'topup' }) }, icon('wallet'), 'Add money I gave'),
+          h('button', { class: 'btn btn-secondary', type: 'button', onClick: () => openEntrySheet({ kind: 'purchase' }) }, icon('plus'), 'Add what I bought'),
         ),
         h('p', { class: 'empty-foot' },
-          'Just looking around? ',
-          h('button', { class: 'link-btn', type: 'button', onClick: () => loadSample() }, 'Load sample data'),
-          ' — you can erase it later in Settings.'),
+          'Just trying the app? ',
+          h('button', { class: 'link-btn', type: 'button', onClick: () => loadSample() }, 'Show an example'),
+          ' (you can delete it later in Settings).'),
       ),
     );
   }
@@ -61,11 +61,11 @@ export function homeScreen(data: AppData): HTMLElement {
   // ----- Hero: the one number that matters -----
   const statusLine =
     status === 'owed'
-      ? notice('critical', 'alert', h('strong', null, `You owe the shop ${money(-balance)}`), ' — add money to settle it.')
+      ? notice('critical', 'alert', h('strong', null, `You owe the shop ${money(-balance)}`), ' Give the shop money to clear it.')
       : status === 'low'
-        ? notice('warning', 'alert', h('strong', null, 'Low balance'), left !== null ? ` — about ${left} ${left === 1 ? 'day' : 'days'} left. Top up soon.` : ' — top up soon.')
+        ? notice('warning', 'alert', h('strong', null, 'Money is running low'), left !== null ? ` — about ${left} ${left === 1 ? 'day' : 'days'} left. Give the shop money soon.` : ' — give the shop money soon.')
         : left !== null
-          ? h('p', { class: 'hero-status' }, `About ${left} ${left === 1 ? 'day' : 'days'} left at ${approxMoney(stats!.average)} a day`)
+          ? h('p', { class: 'hero-status' }, `Enough for about ${left} more ${left === 1 ? 'day' : 'days'} (about ${approxMoney(stats!.average)} a day)`)
           : null;
 
   const spark = h('div', { class: 'hero-spark', 'aria-hidden': 'true' });
@@ -79,34 +79,34 @@ export function homeScreen(data: AppData): HTMLElement {
         h('div', {
           class: `meter meter-${status}`,
           role: 'meter',
-          'aria-label': 'Left from the last top-up',
+          'aria-label': 'Money left from the last money given',
           'aria-valuemin': 0,
           'aria-valuemax': cycle.start / 100,
           'aria-valuenow': Math.max(0, cycle.remaining) / 100,
           'aria-valuetext': `${money(cycle.remaining)} of ${money(cycle.start)}`,
         }, h('div', { class: 'meter-fill', style: `--fill:${meterFill}` })),
         h('p', { class: 'meter-caption' },
-          h('span', null, `${money(cycle.remaining)} of ${money(cycle.start)} left`),
-          h('span', null, `since ${formatDayMonth(cycle.since)}`)))
+          h('span', null, `${money(cycle.remaining)} left of ${money(cycle.start)}`),
+          h('span', null, `given on ${formatDayMonth(cycle.since)}`)))
     : null;
 
   const todayLine = todaysPurchases.length
-    ? h('p', { class: 'today-line is-done' }, icon('check', 18), `Logged today · ${money(todaysPurchases.reduce((s, e) => s + e.amount, 0))}`)
-    : h('p', { class: 'today-line' }, 'Nothing logged today yet');
+    ? h('p', { class: 'today-line is-done' }, icon('check', 18), `Bought today · ${money(todaysPurchases.reduce((s, e) => s + e.amount, 0))}`)
+    : h('p', { class: 'today-line' }, 'Nothing added today');
 
   const hero = h(
     'section',
-    { class: 'card hero', 'aria-label': 'Balance' },
+    { class: 'card hero', 'aria-label': 'Money left' },
     h('div', null,
-      h('p', { class: 'hero-label' }, `Balance at ${settings.shopName || 'the shop'}`),
+      h('p', { class: 'hero-label' }, `Money left at ${settings.shopName || 'the shop'}`),
       h('div', { class: 'hero-top' },
         h('p', { class: `hero-value${balance < 0 ? ' is-negative' : ''}` }, balance < 0 ? `−${money(-balance)}` : money(balance)),
         spark)),
     meter,
     statusLine,
     h('div', { class: 'hero-actions' },
-      h('button', { class: 'btn btn-primary', type: 'button', onClick: () => openEntrySheet({ kind: 'purchase' }) }, icon('plus'), todaysPurchases.length ? 'Log purchase' : "Log today's purchase"),
-      h('button', { class: 'btn btn-secondary', type: 'button', onClick: () => openEntrySheet({ kind: 'topup' }) }, icon('wallet'), 'Add money')),
+      h('button', { class: 'btn btn-primary', type: 'button', onClick: () => openEntrySheet({ kind: 'purchase' }) }, icon('plus'), 'Add what I bought'),
+      h('button', { class: 'btn btn-secondary', type: 'button', onClick: () => openEntrySheet({ kind: 'topup' }) }, icon('wallet'), 'Add money I gave')),
     todayLine,
   );
 
@@ -114,16 +114,16 @@ export function homeScreen(data: AppData): HTMLElement {
   const kpis = h(
     'section',
     { class: 'stats-grid', 'aria-label': 'Quick numbers' },
-    statTile('Last 7 days', money(week.spent), `${week.purchaseDays} shop ${week.purchaseDays === 1 ? 'day' : 'days'}`),
-    statTile('Usual day', stats ? approxMoney(stats.average) : '—', stats ? (stats.min === stats.max ? `last ${stats.days === 1 ? 'day' : `${stats.days} days`}` :`${money(stats.min)}–${money(stats.max)}`) : 'no purchases yet'),
-    statTile('Days left', left !== null ? `≈ ${left}` : '—', left !== null ? 'at your usual day' : balance <= 0 ? 'top up to continue' : 'log a purchase first'),
+    statTile('Last 7 days', money(week.spent), `spent on ${week.purchaseDays} ${week.purchaseDays === 1 ? 'day' : 'days'}`),
+    statTile('Daily cost', stats ? approxMoney(stats.average) : '—', stats ? (stats.min === stats.max ? `last ${stats.days === 1 ? 'day' : `${stats.days} days`}` : `${money(stats.min)} to ${money(stats.max)}`) : 'nothing bought yet'),
+    statTile('Days left', left !== null ? String(left) : '—', left !== null ? `at ${approxMoney(stats!.average)} a day` : balance <= 0 ? 'give money to go on' : 'add what you bought first'),
   );
 
   // ----- Spend, last 14 days -----
   const buckets = spendBuckets(entries, addDays(now, -13), now, 'day');
   const spendCard = chartCard({
-    title: 'Spend, last 14 days',
-    subtitle: stats ? `Line shows your usual day (${approxMoney(stats.average)})` : undefined,
+    title: 'Money spent, last 14 days',
+    subtitle: stats ? `The line is the daily cost (${approxMoney(stats.average)})` : undefined,
     height: 180,
     className: 'home-spend',
     draw: (width, animate) =>
@@ -132,7 +132,7 @@ export function homeScreen(data: AppData): HTMLElement {
           label: formatRowDate(b.start),
           tick: formatDayMonth(b.start),
           value: b.spent,
-          detail: b.purchases ? itemsSummary(b.items) : 'No purchase',
+          detail: b.purchases ? itemsSummary(b.items) : 'Nothing bought',
         })),
         width,
         height: 180,
@@ -151,16 +151,16 @@ export function homeScreen(data: AppData): HTMLElement {
     'section',
     { class: 'card recent' },
     h('header', { class: 'card-header' },
-      h('h3', { class: 'card-title' }, 'Recent'),
-      h('button', { class: 'link-btn', type: 'button', onClick: () => go('history') }, 'All history', icon('arrowRight', 16))),
+      h('h3', { class: 'card-title' }, 'Latest'),
+      h('button', { class: 'link-btn', type: 'button', onClick: () => go('history') }, 'See all', icon('arrowRight', 16))),
     h('ul', { class: 'entry-list' }, recentRows.map((r) => entryRow(r, () => openEntrySheet({ entry: r.entry })))),
   );
 
   const needsBackup = entries.length >= 20 && (!settings.lastBackupAt || Date.now() - settings.lastBackupAt > BACKUP_EVERY_MS);
   const nudge = needsBackup
     ? notice('info', 'download',
-        'Your data is saved only on this device. ',
-        h('button', { class: 'link-btn', type: 'button', onClick: exportBackup }, 'Download a backup'),
+        'Your list is kept only on this phone. ',
+        h('button', { class: 'link-btn', type: 'button', onClick: exportBackup }, 'Save a copy'),
         ' so you never lose it.')
     : null;
 

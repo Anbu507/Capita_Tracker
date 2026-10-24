@@ -8,7 +8,7 @@ import { h } from '../ui/dom.ts';
 import { icon } from '../ui/icons.ts';
 import { openSheet } from '../ui/sheet.ts';
 import { toast } from '../ui/toast.ts';
-import { approxMoney, money, notice, segmented } from './shared.ts';
+import { money, notice, segmented } from './shared.ts';
 
 export function openEntrySheet(opts: { kind?: EntryKind; entry?: Entry } = {}): void {
   const data = getData();
@@ -77,17 +77,17 @@ export function openEntrySheet(opts: { kind?: EntryKind; entry?: Entry } = {}): 
   amountInput.addEventListener('focus', () => amountInput.select());
   const amountError = h('p', { class: 'field-error', id: 'entry-amount-error', role: 'alert' });
   const amountHint = h('p', { class: 'field-hint', id: 'entry-amount-hint' });
-  const noteInput = h('input', { type: 'text', id: 'entry-note', name: 'note', maxlength: 200, placeholder: 'Optional', value: editing?.note ?? '' });
+  const noteInput = h('input', { type: 'text', id: 'entry-note', name: 'note', maxlength: 200, placeholder: 'You can leave this empty', value: editing?.note ?? '' });
 
   const itemsBlock = h(
     'fieldset',
     { class: 'field' },
-    h('legend', { class: 'field-label' }, 'What I took'),
+    h('legend', { class: 'field-label' }, 'What I bought'),
     h('div', { class: 'item-list' }, rows.map(stepper)),
   );
   const alreadyToday = !editing && data.entries.some((e) => e.kind === 'purchase' && e.date === now);
   const todayNotice = alreadyToday
-    ? notice('info', 'info', `You already logged a purchase today. Save again only if you went to the shop twice.`)
+    ? notice('info', 'info', `You already added today. Add again only if you went to the shop twice today.`)
     : null;
 
   const amountLabel = h('label', { class: 'field-label', for: 'entry-amount' });
@@ -97,11 +97,11 @@ export function openEntrySheet(opts: { kind?: EntryKind; entry?: Entry } = {}): 
     const purchase = kind === 'purchase';
     itemsBlock.hidden = !purchase;
     if (todayNotice) todayNotice.hidden = !purchase;
-    amountLabel.textContent = purchase ? 'Amount the shop charged' : 'Amount I gave the shop';
+    amountLabel.textContent = purchase ? 'How much it cost' : 'How much I gave the shop';
     amountHint.textContent = purchase
-      ? stats ? `Usual day ${approxMoney(stats.average)} (${money(stats.min)}–${money(stats.max)})` : ''
-      : `Balance now ${money(balanceOf(data.entries))}`;
-    submit.textContent = editing ? 'Save changes' : purchase ? 'Save purchase' : 'Add money';
+      ? stats ? (stats.min === stats.max ? `Normally ${money(stats.min)}` : `Normally ${money(stats.min)} to ${money(stats.max)}`) : ''
+      : `Money left now: ${money(balanceOf(data.entries))}`;
+    submit.textContent = 'Save';
     if (!editing) amountInput.value = purchase && last ? toInputValue(last.amount) : '';
     amountError.textContent = '';
   };
@@ -110,12 +110,12 @@ export function openEntrySheet(opts: { kind?: EntryKind; entry?: Entry } = {}): 
     'form',
     { id: 'entry-form', class: 'form', novalidate: true },
     !editing &&
-      segmented('Entry type', [{ id: 'purchase', label: 'Purchase' }, { id: 'topup', label: 'Add money' }], kind, (v) => {
+      segmented('What is this?', [{ id: 'purchase', label: 'I bought' }, { id: 'topup', label: 'I gave money' }], kind, (v) => {
         kind = v;
         syncKind();
       }),
     todayNotice,
-    h('div', { class: 'field' }, h('label', { class: 'field-label', for: 'entry-date' }, 'Date'), h('div', { class: 'field-row' }, dateInput, dateHint)),
+    h('div', { class: 'field' }, h('label', { class: 'field-label', for: 'entry-date' }, 'Day'), h('div', { class: 'field-row' }, dateInput, dateHint)),
     itemsBlock,
     h(
       'div',
@@ -138,7 +138,7 @@ export function openEntrySheet(opts: { kind?: EntryKind; entry?: Entry } = {}): 
         onClick: async () => {
           await sheet.close();
           const removed = deleteEntry(editing.id);
-          if (removed) toast('Entry deleted', { label: 'Undo', run: () => restoreEntry(removed) });
+          if (removed) toast('Deleted', { label: 'Undo', run: () => restoreEntry(removed) });
         },
       }, icon('trash', 18), 'Delete'),
     );
@@ -153,7 +153,7 @@ export function openEntrySheet(opts: { kind?: EntryKind; entry?: Entry } = {}): 
       return;
     }
     if (amount === null) {
-      amountError.textContent = 'Enter an amount greater than 0, like 42 or 42.50';
+      amountError.textContent = 'Type the money, like 42';
       amountInput.setAttribute('aria-invalid', 'true');
       amountInput.focus();
       return;
@@ -168,11 +168,11 @@ export function openEntrySheet(opts: { kind?: EntryKind; entry?: Entry } = {}): 
     await sheet.close();
     if (editing) {
       updateEntry(editing.id, draft);
-      toast('Changes saved');
+      toast('Saved');
     } else {
       const created = addEntry(draft);
       const left = balanceOf(getData().entries);
-      toast(`${kind === 'purchase' ? 'Logged' : 'Added'} ${money(amount)} · ${money(left)} left`, {
+      toast(`Saved ${money(amount)}. Money left: ${money(left)}`, {
         label: 'Undo',
         run: () => deleteEntry(created.id),
       });
@@ -180,7 +180,7 @@ export function openEntrySheet(opts: { kind?: EntryKind; entry?: Entry } = {}): 
   });
 
   const sheet = openSheet({
-    title: editing ? (editing.kind === 'purchase' ? 'Edit purchase' : 'Edit money added') : 'New entry',
+    title: editing ? (editing.kind === 'purchase' ? 'Change what I bought' : 'Change money given') : 'Add',
     body: form,
     footer,
     initialFocus: amountInput,
