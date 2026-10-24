@@ -11,11 +11,9 @@ import {
   lastPurchase,
   rangeStart,
   rangeTotals,
-  recentAmounts,
   recentDayStats,
   runningBalance,
   spendBuckets,
-  usualQuantities,
 } from '../src/domain/ledger.ts';
 import type { Entry } from '../src/domain/types.ts';
 
@@ -135,21 +133,4 @@ test('history groups newest month first with month totals', () => {
 test('last purchase', () => {
   assert.equal(lastPurchase(entries)?.amount, 1_000);
   assert.equal(lastPurchase([topup('2026-10-01', 1)]), undefined);
-});
-
-test('recent amounts are distinct, newest first, per kind', () => {
-  const list = [...entries, buy('2026-10-05', 4_200), topup('2026-10-06', 50_000)];
-  assert.deepEqual(recentAmounts(list, 'purchase'), [4_200, 1_000, 4_500]);
-  assert.deepEqual(recentAmounts(list, 'topup'), [50_000]);
-  assert.deepEqual(recentAmounts([], 'purchase'), []);
-});
-
-test('usual quantities come from the last purchase, else the item default', () => {
-  const items = [
-    { id: 'eggs', name: 'Eggs', emoji: '🥚', defaultQty: 3, archived: false },
-    { id: 'milk', name: 'Milk', emoji: '🥛', defaultQty: 1, archived: false },
-    { id: 'old', name: 'Old', emoji: '🛒', defaultQty: 2, archived: true },
-  ];
-  assert.deepEqual([...usualQuantities(items, entries)], [['eggs', 1], ['milk', 1]]);
-  assert.deepEqual([...usualQuantities(items, [])], [['eggs', 3], ['milk', 1]]);
 });

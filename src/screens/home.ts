@@ -106,8 +106,7 @@ export function homeScreen(data: AppData): HTMLElement {
     statusLine,
     h('div', { class: 'hero-actions' },
       h('button', { class: 'btn btn-primary', type: 'button', onClick: () => openEntrySheet({ kind: 'purchase' }) }, icon('plus'), todaysPurchases.length ? 'Log purchase' : "Log today's purchase"),
-      h('button', { class: 'btn btn-secondary', type: 'button', onClick: () => openEntrySheet({ kind: 'topup' }) }, icon('wallet'), 'Add money'),
-      h('button', { class: 'btn btn-ghost hero-shop', type: 'button', onClick: () => go('shop') }, icon('store'), 'Shop view — show the shopkeeper')),
+      h('button', { class: 'btn btn-secondary', type: 'button', onClick: () => openEntrySheet({ kind: 'topup' }) }, icon('wallet'), 'Add money')),
     todayLine,
   );
 

@@ -1,14 +1,12 @@
 // Hash router: #/ , #/history , #/insights , #/settings. Back button works and nothing reloads.
 
-export type Route = 'home' | 'history' | 'insights' | 'settings' | 'shop';
+export type Route = 'home' | 'history' | 'insights' | 'settings';
 
 export const ROUTES: { id: Route; label: string; hash: string }[] = [
   { id: 'home', label: 'Home', hash: '#/' },
   { id: 'history', label: 'History', hash: '#/history' },
   { id: 'insights', label: 'Insights', hash: '#/insights' },
   { id: 'settings', label: 'Settings', hash: '#/settings' },
-  // Full-screen view for the shopkeeper; not in the navigation bar.
-  { id: 'shop', label: 'Shop view', hash: '#/shop' },
 ];
 
 export function currentRoute(): Route {

@@ -1,5 +1,4 @@
 import { CURRENCIES, currencySymbol, parseAmount, toInputValue } from '../domain/money.ts';
-import { normalizePhone } from '../domain/share.ts';
 import type { AppData, Currency, Item, Theme } from '../domain/types.ts';
 import { exportBackup, readBackup } from '../data/backup.ts';
 import { addItem, eraseAll, loadSample, removeItem, replaceAll, updateItem, updateSettings } from '../data/store.ts';
@@ -7,7 +6,7 @@ import { confirmDialog } from '../ui/confirm.ts';
 import { h, type Child } from '../ui/dom.ts';
 import { icon } from '../ui/icons.ts';
 import { toast } from '../ui/toast.ts';
-import { money, openWhatsApp, screenHeader, segmented } from './shared.ts';
+import { money, screenHeader, segmented } from './shared.ts';
 
 function section(title: string, description: string | null, ...children: Child[]): HTMLElement {
   return h('section', { class: 'card settings-section' },
@@ -63,22 +62,6 @@ export function settingsScreen(data: AppData): HTMLElement {
   const shop = h('input', { id: 'settings-shop', value: settings.shopName, maxlength: 40, placeholder: 'e.g. Murugan Stores', autocomplete: 'off' });
   shop.addEventListener('change', () => updateSettings({ shopName: shop.value.trim() }));
 
-  const phone = h('input', {
-    id: 'settings-phone',
-    type: 'tel',
-    inputmode: 'tel',
-    autocomplete: 'off',
-    placeholder: '98765 43210',
-    value: settings.shopPhone ? `+${settings.shopPhone}` : '',
-  });
-  phone.addEventListener('change', () => {
-    const v = normalizePhone(phone.value, settings.currency);
-    if (v === null) {
-      toast('That does not look like a phone number. Use the 10-digit mobile number.');
-      phone.value = settings.shopPhone ? `+${settings.shopPhone}` : '';
-    } else updateSettings({ shopPhone: v });
-  });
-
   const currency = h('select', { id: 'settings-currency' },
     CURRENCIES.map((c) => h('option', { value: c.code, selected: c.code === settings.currency }, c.label)));
   currency.addEventListener('change', () => updateSettings({ currency: currency.value as Currency }));
@@ -126,14 +109,6 @@ export function settingsScreen(data: AppData): HTMLElement {
     h('div', { class: 'settings-grid' },
       section('Shop', null,
         field('Shop name', 'settings-shop', shop, 'Shown on the home screen.'),
-        field("Shopkeeper's WhatsApp number", 'settings-phone', phone,
-          settings.shopPhone ? undefined : 'Optional. With it, messages go straight to their chat.'),
-        settings.shopPhone &&
-          h('button', {
-            class: 'link-btn settings-test',
-            type: 'button',
-            onClick: () => openWhatsApp('Hello! I will send my egg and banana account here. 🥚🍌'),
-          }, icon('send', 16), 'Send a test message'),
         field('Currency', 'settings-currency', currency),
         field('Warn me when the balance is at or below', 'settings-low',
           h('div', { class: 'amount-input' }, h('span', { class: 'amount-prefix', 'aria-hidden': 'true' }, currencySymbol(settings.currency)), low),
@@ -204,6 +179,6 @@ export function settingsScreen(data: AppData): HTMLElement {
             },
           }, icon('trash', 18), 'Erase everything'))),
     ),
-    h('p', { class: 'about' }, `Capital Tracker ${__APP_VERSION__} · works offline · no account, no tracking`),
+    h('p', { class: 'about' }, 'Capital Tracker 1.0 · works offline · no account, no tracking'),
   );
 }

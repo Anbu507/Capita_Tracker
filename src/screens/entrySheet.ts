@@ -1,15 +1,14 @@
 // Add / edit sheet for both entry kinds. Pre-filled from the last purchase so a normal day is: open → Save.
 import { formatRelativeDay, isISODate, today } from '../domain/dates.ts';
-import { balanceOf, lastPurchase, recentAmounts, recentDayStats, usualQuantities } from '../domain/ledger.ts';
+import { balanceOf, lastPurchase, recentDayStats } from '../domain/ledger.ts';
 import { currencySymbol, parseAmount, toInputValue } from '../domain/money.ts';
-import { entryMessage } from '../domain/share.ts';
 import type { Entry, EntryItem, EntryKind } from '../domain/types.ts';
-import { addEntry, deleteEntry, getData, restoreEntry, updateEntry, updateSettings } from '../data/store.ts';
+import { addEntry, deleteEntry, getData, restoreEntry, updateEntry } from '../data/store.ts';
 import { h } from '../ui/dom.ts';
 import { icon } from '../ui/icons.ts';
 import { openSheet } from '../ui/sheet.ts';
 import { toast } from '../ui/toast.ts';
-import { approxMoney, money, notice, openWhatsApp, segmented } from './shared.ts';
+import { approxMoney, money, notice, segmented } from './shared.ts';
 
 export function openEntrySheet(opts: { kind?: EntryKind; entry?: Entry } = {}): void {
   const data = getData();
@@ -23,12 +22,12 @@ export function openEntrySheet(opts: { kind?: EntryKind; entry?: Entry } = {}): 
   const qty = new Map<string, number>();
   const rows: EntryItem[] = [];
   const used = editing?.kind === 'purchase' ? editing.items : null;
-  const usual = usualQuantities(data.items, data.entries);
   for (const item of data.items) {
     const inEntry = used?.find((i) => i.itemId === item.id);
     if (item.archived && !inEntry) continue;
     rows.push({ itemId: item.id, name: item.name, emoji: item.emoji, qty: 0 });
-    qty.set(item.id, used ? (inEntry?.qty ?? 0) : (usual.get(item.id) ?? item.defaultQty));
+    const fromLast = last?.items.find((i) => i.itemId === item.id)?.qty;
+    qty.set(item.id, used ? (inEntry?.qty ?? 0) : (fromLast ?? item.defaultQty));
   }
   for (const i of used ?? []) {
     if (!rows.some((r) => r.itemId === i.itemId)) {
@@ -80,29 +79,6 @@ export function openEntrySheet(opts: { kind?: EntryKind; entry?: Entry } = {}): 
   const amountHint = h('p', { class: 'field-hint', id: 'entry-amount-hint' });
   const noteInput = h('input', { type: 'text', id: 'entry-note', name: 'note', maxlength: 200, placeholder: 'Optional', value: editing?.note ?? '' });
 
-  // One-tap amounts: the last few different amounts of this kind.
-  const chips = h('div', { class: 'amount-chips', role: 'group', 'aria-label': 'Recent amounts' });
-  const renderChips = () =>
-    chips.replaceChildren(
-      ...recentAmounts(data.entries, kind).map((a) =>
-        h('button', {
-          class: 'chip',
-          type: 'button',
-          onClick: () => {
-            amountInput.value = toInputValue(a);
-            amountError.textContent = '';
-            amountInput.removeAttribute('aria-invalid');
-          },
-        }, money(a))),
-    );
-
-  const sendBox = h('input', { type: 'checkbox', id: 'entry-send', checked: data.settings.sendToShop });
-  const sendRow = h('label', { class: 'check-row', for: 'entry-send' },
-    sendBox,
-    h('div', null,
-      h('strong', null, editing ? 'Send the correction to the shop on WhatsApp' : 'Send to the shop on WhatsApp'),
-      h('span', null, data.settings.shopPhone ? 'Opens WhatsApp with the message ready. You press Send.' : 'WhatsApp will ask which chat. Add the shop number in Settings to skip that.')));
-
   const itemsBlock = h(
     'fieldset',
     { class: 'field' },
@@ -128,7 +104,6 @@ export function openEntrySheet(opts: { kind?: EntryKind; entry?: Entry } = {}): 
     submit.textContent = editing ? 'Save changes' : purchase ? 'Save purchase' : 'Add money';
     if (!editing) amountInput.value = purchase && last ? toInputValue(last.amount) : '';
     amountError.textContent = '';
-    renderChips();
   };
 
   const form = h(
@@ -147,12 +122,10 @@ export function openEntrySheet(opts: { kind?: EntryKind; entry?: Entry } = {}): 
       { class: 'field' },
       amountLabel,
       h('div', { class: 'amount-input' }, h('span', { class: 'amount-prefix', 'aria-hidden': 'true' }, currencySymbol(data.settings.currency)), amountInput),
-      chips,
       amountHint,
       amountError,
     ),
     h('div', { class: 'field' }, h('label', { class: 'field-label', for: 'entry-note' }, 'Note'), noteInput),
-    sendRow,
   );
   syncKind();
 
@@ -172,7 +145,7 @@ export function openEntrySheet(opts: { kind?: EntryKind; entry?: Entry } = {}): 
   }
   footer.appendChild(submit);
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const amount = parseAmount(amountInput.value);
     if (!isISODate(dateInput.value) || dateInput.value > now) {
@@ -192,26 +165,18 @@ export function openEntrySheet(opts: { kind?: EntryKind; entry?: Entry } = {}): 
       note: noteInput.value,
       items: rows.map((r) => ({ ...r, qty: qty.get(r.itemId) ?? 0 })),
     };
-    // Save first, then open WhatsApp inside this same tap (browsers block pop-ups opened later).
-    let saved: Entry;
+    await sheet.close();
     if (editing) {
       updateEntry(editing.id, draft);
-      saved = getData().entries.find((x) => x.id === editing.id)!;
+      toast('Changes saved');
     } else {
-      saved = addEntry(draft);
-    }
-    const left = balanceOf(getData().entries);
-    const send = sendBox.checked;
-    if (send) openWhatsApp(entryMessage(saved, left, getData().settings.currency, { corrected: !!editing }));
-    if (send !== getData().settings.sendToShop) updateSettings({ sendToShop: send });
-
-    void sheet.close();
-    if (editing) toast('Changes saved');
-    else
+      const created = addEntry(draft);
+      const left = balanceOf(getData().entries);
       toast(`${kind === 'purchase' ? 'Logged' : 'Added'} ${money(amount)} · ${money(left)} left`, {
         label: 'Undo',
-        run: () => deleteEntry(saved.id),
+        run: () => deleteEntry(created.id),
       });
+    }
   });
 
   const sheet = openSheet({

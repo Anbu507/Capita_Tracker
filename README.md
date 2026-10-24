@@ -6,9 +6,7 @@ and charts of the balance and spending.
 
 - Works on phone, tablet and desktop (one responsive app).
 - No account, no server, works offline; data stays in this browser (export a backup in Settings).
-- **1.1.1:** made for the shopkeeper too — a big-screen **Shop view** to hand over at the counter,
-  and **WhatsApp** messages/statements they can read without learning an app.
-- Design and decisions: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · changes: [CHANGELOG.md](CHANGELOG.md).
+- Design and decisions: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Run it
 
@@ -16,9 +14,6 @@ and charts of the balance and spending.
 npm install
 npm run dev
 ```
-
-On Windows PowerShell, if `npm` is blocked ("running scripts is disabled"), use `npm.cmd`
-instead: `npm.cmd install`, `npm.cmd run dev`.
 
 Open the address Vite prints (for example `http://localhost:5173`). `--host` is on, so a phone
 on the same Wi-Fi can open the "Network" address too.
@@ -38,15 +33,6 @@ on the same Wi-Fi can open the "Network" address too.
 3. **When the balance is low** (warning at ₹100 by default; change it in Settings): give the shop
    money again and log it with **Add money**.
 4. **Now and then:** Settings → **Download backup**.
-
-### With the shopkeeper (1.1.1)
-
-- **Once:** Settings → Shop → add the shopkeeper's WhatsApp number → "Send a test message".
-- **At the counter:** Home → **Shop view** → hand the phone over. They check 🥚 / 🍌, type the
-  amount on the number pad and press **Save**. Then **Send on WhatsApp** → **Done**.
-- **Logging it yourself:** tick "Send to the shop on WhatsApp" in the entry sheet; WhatsApp
-  opens with the message ready and you press Send.
-- **To settle up:** History → **Send statement** sends everything since you last gave money.
 
 Desktop shortcut: press **N** to log a purchase.
 

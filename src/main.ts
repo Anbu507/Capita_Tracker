@@ -12,25 +12,19 @@ import { historyScreen } from './screens/history.ts';
 import { homeScreen } from './screens/home.ts';
 import { insightsScreen } from './screens/insights.ts';
 import { settingsScreen } from './screens/settings.ts';
-import { resetShopView, shopScreen } from './screens/shop.ts';
 import { $, h, prefersReducedMotion } from './ui/dom.ts';
 import { icon, type IconName } from './ui/icons.ts';
 import { disposeAll } from './ui/lifecycle.ts';
-import { currentRoute, go, onRouteChange, ROUTES, type Route } from './ui/router.ts';
+import { currentRoute, onRouteChange, ROUTES, type Route } from './ui/router.ts';
 import { toast } from './ui/toast.ts';
 
-/** `entering` is true when the person navigates to the screen, false when only the data changed. */
-const SCREENS: Record<Route, (data: AppData, entering: boolean) => HTMLElement> = {
+const SCREENS: Record<Route, (data: AppData) => HTMLElement> = {
   home: homeScreen,
   history: historyScreen,
   insights: insightsScreen,
   settings: settingsScreen,
-  shop: (data, entering) => {
-    if (entering) resetShopView();
-    return shopScreen(data);
-  },
 };
-const NAV_ICONS: Record<Route, IconName> = { home: 'home', history: 'history', insights: 'chart', settings: 'settings', shop: 'store' };
+const NAV_ICONS: Record<Route, IconName> = { home: 'home', history: 'history', insights: 'chart', settings: 'settings' };
 
 const outlet = $('#outlet');
 
@@ -57,8 +51,7 @@ function buildNav(): void {
       h('span', null, 'Capital Tracker')),
     h('div', { class: 'nav-actions' },
       h('button', { class: 'btn btn-primary btn-block', type: 'button', onClick: () => openEntrySheet({ kind: 'purchase' }) }, icon('plus'), 'Log purchase'),
-      h('button', { class: 'btn btn-secondary btn-block', type: 'button', onClick: () => openEntrySheet({ kind: 'topup' }) }, icon('wallet'), 'Add money'),
-      h('button', { class: 'btn btn-ghost btn-block', type: 'button', onClick: () => go('shop') }, icon('store'), 'Shop view')),
+      h('button', { class: 'btn btn-secondary btn-block', type: 'button', onClick: () => openEntrySheet({ kind: 'topup' }) }, icon('wallet'), 'Add money')),
     h('ul', { class: 'nav-links' },
       link(home),
       link(history),
@@ -79,16 +72,14 @@ function markActive(route: Route): void {
 // ---------- Rendering ----------
 
 /** Re-renders the current screen, keeping focus (by element id) and the caret where they were. */
-function render(entering = false): void {
+function render(): void {
   const active = document.activeElement as HTMLInputElement | null;
   const focusId = active && outlet.contains(active) ? active.id : '';
   const selection = focusId && 'selectionStart' in active! ? [active!.selectionStart, active!.selectionEnd] : null;
 
   disposeAll();
   const route = currentRoute();
-  // The Shop view is handed to the shopkeeper: no navigation around it.
-  document.body.classList.toggle('shop-mode', route === 'shop');
-  outlet.replaceChildren(SCREENS[route](getData(), entering));
+  outlet.replaceChildren(SCREENS[route](getData()));
   markActive(route);
 
   if (focusId) {
@@ -105,7 +96,7 @@ function render(entering = false): void {
 }
 
 function navigate(): void {
-  render(true);
+  render();
   window.scrollTo({ top: 0 });
   outlet.focus({ preventScroll: true });
   if (prefersReducedMotion()) return;
@@ -120,7 +111,7 @@ const result = load();
 hydrate(result.data);
 applyTheme(result.data.settings.theme);
 buildNav();
-render(true);
+render();
 
 let warnedSave = false;
 subscribe((data) => {
@@ -148,7 +139,7 @@ if (!result.ok) {
 // Keyboard shortcut on desktop: "n" opens a new purchase.
 window.addEventListener('keydown', (e) => {
   const t = e.target as HTMLElement;
-  if (e.key !== 'n' || e.ctrlKey || e.metaKey || e.altKey || currentRoute() === 'shop' || t.closest('input, textarea, select, dialog')) return;
+  if (e.key !== 'n' || e.ctrlKey || e.metaKey || e.altKey || t.closest('input, textarea, select, dialog')) return;
   e.preventDefault();
   openEntrySheet({ kind: 'purchase' });
 });
