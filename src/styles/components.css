@@ -1043,3 +1043,113 @@ input::placeholder {
 .toast-action:hover {
   background: rgba(255, 255, 255, 0.08);
 }
+
+/* ---------- 1.2.0: Shop's page (the shopkeeper's read-only view) ---------- */
+
+.view-mode .nav {
+  display: none;
+}
+
+.view-mode .app {
+  display: block;
+}
+
+.view-mode .main {
+  padding: calc(env(safe-area-inset-top) + 20px) calc(env(safe-area-inset-right) + var(--gutter))
+    calc(env(safe-area-inset-bottom) + 28px) calc(env(safe-area-inset-left) + var(--gutter));
+}
+
+.view-mode .toast-region {
+  bottom: calc(env(safe-area-inset-bottom) + 16px);
+}
+
+.view {
+  max-width: 640px;
+  display: grid;
+  gap: 16px;
+}
+
+.view .screen-header {
+  margin-bottom: 0;
+}
+
+.view-hero .hero-value {
+  font-size: clamp(3.25rem, 16vw, 4.5rem);
+}
+
+.view-totals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.view-totals p {
+  display: grid;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.view-totals span {
+  color: var(--text-2);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.view-totals strong {
+  font-size: 1.25rem;
+}
+
+.view-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.view-loading {
+  padding: 24px 0;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.entry-row.is-static {
+  cursor: default;
+  border-radius: 0;
+}
+
+.entry-row.is-static:hover {
+  background: none;
+}
+
+/* Settings → Shop's page */
+
+.share-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin-bottom: 10px;
+}
+
+.share-status {
+  color: var(--good-text);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.share-status.is-waiting {
+  color: var(--warning-text);
+}
+
+#settings-share-link {
+  font-size: 0.875rem;
+  color: var(--text-2);
+}
+
+.share-actions {
+  margin: 12px 0 16px;
+}

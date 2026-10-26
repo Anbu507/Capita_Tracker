@@ -48,6 +48,11 @@ export interface Settings {
   lowBalance: Paise;
   theme: Theme;
   lastBackupAt: number | null;
+  /** My name, shown on the shop's page. */
+  shareName: string;
+  /** Shop's page id ('' when sharing is off) and the secret key that lets this phone update it. */
+  shareId: string;
+  shareKey: string;
 }
 
 export interface AppData {

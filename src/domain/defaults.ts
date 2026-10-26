@@ -14,7 +14,7 @@ export function defaultItems(): Item[] {
 }
 
 export function defaultSettings(): Settings {
-  return { shopName: '', currency: 'INR', lowBalance: 10_000, theme: 'system', lastBackupAt: null };
+  return { shopName: '', currency: 'INR', lowBalance: 10_000, theme: 'system', lastBackupAt: null, shareName: '', shareId: '', shareKey: '' };
 }
 
 export function emptyData(): AppData {

@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // The noticeboard for the shop's page (see docs/ARCHITECTURE.md §14).
+  "name": "capital-tracker-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "kv_namespaces": [
+    {
+      "binding": "LEDGERS",
+      "id": "07409065e7d0410eb4d6b1812e0d1a34"
+    }
+  ],
+  "observability": { "enabled": true }
+}

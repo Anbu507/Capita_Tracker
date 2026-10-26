@@ -1,10 +1,13 @@
+import { formatUpdated } from '../domain/dates.ts';
 import { CURRENCIES, currencySymbol, parseAmount, toInputValue } from '../domain/money.ts';
 import type { AppData, Currency, Item, Theme } from '../domain/types.ts';
 import { exportBackup, readBackup } from '../data/backup.ts';
+import { lastSentAt, onShareState, shareNow, shareState, shopLink, startSharing, stopSharing } from '../data/share.ts';
 import { addItem, eraseAll, loadSample, removeItem, replaceAll, updateItem, updateSettings } from '../data/store.ts';
 import { confirmDialog } from '../ui/confirm.ts';
 import { h, type Child } from '../ui/dom.ts';
 import { icon } from '../ui/icons.ts';
+import { onDispose } from '../ui/lifecycle.ts';
 import { toast } from '../ui/toast.ts';
 import { money, screenHeader, segmented } from './shared.ts';
 
@@ -55,6 +58,92 @@ function itemRow(item: Item): HTMLElement {
     }, icon('trash', 18)));
 }
 
+async function copyText(text: string, input: HTMLInputElement): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // No clipboard API (e.g. plain http on the home Wi-Fi): fall back to the selected text.
+    input.select();
+    return document.execCommand('copy');
+  }
+}
+
+/** Settings → Shop's page: make it, share the link, see when it last updated, stop it. */
+function shopPageSection(data: AppData): HTMLElement {
+  const { settings } = data;
+  const name = h('input', { id: 'settings-share-name', value: settings.shareName, maxlength: 40, placeholder: 'e.g. Anbu', autocomplete: 'off' });
+  name.addEventListener('change', () => updateSettings({ shareName: name.value.trim() }));
+  const nameField = field('Your name (the shop sees this)', 'settings-share-name', name);
+
+  if (!settings.shareId) {
+    const make = h('button', { class: 'btn btn-primary', type: 'button' }, icon('store'), "Make the shop's page");
+    make.addEventListener('click', async () => {
+      make.disabled = true;
+      const ok = await startSharing(name.value);
+      toast(ok ? "The shop's page is ready. Send the link to the shop." : "Made. It will go online when you have internet.");
+    });
+    return section("Shop's page", 'Let the shop see, on their own phone, the money left and what you bought. They cannot change anything.',
+      nameField,
+      h('div', { class: 'btn-row btn-row-start share-actions' }, make));
+  }
+
+  const link = shopLink(settings.shareId);
+  const linkInput = h('input', { id: 'settings-share-link', value: link, readonly: true, 'aria-label': "Shop's page link" });
+  linkInput.addEventListener('focus', () => linkInput.select());
+
+  const status = h('p', { class: 'share-status', role: 'status' });
+  const paintStatus = () => {
+    const state = shareState();
+    const at = lastSentAt();
+    status.replaceChildren(
+      state === 'sending' ? "Updating the shop's page…"
+      : state === 'waiting' ? 'No internet right now. It will update by itself.'
+      : at ? `Shop's page updated ${formatUpdated(at)}` : "The shop's page is on.");
+    status.classList.toggle('is-waiting', state === 'waiting');
+    retry.hidden = state !== 'waiting';
+  };
+  const retry = h('button', { class: 'link-btn', type: 'button', onClick: () => void shareNow() }, 'Try again');
+  onDispose(onShareState(paintStatus));
+  paintStatus();
+
+  const share = typeof navigator.share === 'function'
+    ? h('button', {
+        class: 'btn btn-secondary',
+        type: 'button',
+        onClick: () => navigator.share({ title: "Shop's page", text: 'My account at your shop:', url: link }).catch(() => {}),
+      }, icon('send', 18), 'Send link')
+    : null;
+
+  return section("Shop's page", 'Send this link to the shop once. Their page updates by itself every time you save.',
+    h('div', { class: 'share-status-row' }, status, retry),
+    linkInput,
+    h('div', { class: 'btn-row btn-row-start share-actions' },
+      h('button', {
+        class: 'btn btn-secondary',
+        type: 'button',
+        onClick: async () => toast((await copyText(link, linkInput)) ? 'Link copied' : 'Could not copy. Press and hold the link to copy it.'),
+      }, icon('copy', 18), 'Copy link'),
+      share,
+      h('a', { class: 'btn btn-secondary', href: link, target: '_blank', rel: 'noopener' }, icon('open', 18), 'Open')),
+    nameField,
+    h('div', { class: 'btn-row btn-row-start share-actions' },
+      h('button', {
+        class: 'btn btn-danger-ghost',
+        type: 'button',
+        onClick: async () => {
+          const ok = await confirmDialog({
+            title: 'Stop sharing?',
+            message: "The shop's page will be turned off and the link will stop working. Your list stays on this phone.",
+            confirmLabel: 'Stop sharing',
+            danger: true,
+          });
+          if (!ok) return;
+          toast((await stopSharing()) ? "The shop's page is turned off" : 'Could not turn it off. Check the internet and try again.');
+        },
+      }, 'Stop sharing')));
+}
+
 export function settingsScreen(data: AppData): HTMLElement {
   const { settings } = data;
 
@@ -88,7 +177,11 @@ export function settingsScreen(data: AppData): HTMLElement {
         danger: data.entries.length > 0,
       });
       if (ok) {
-        replaceAll(backup);
+        // A copy saved before sharing was turned on must not switch the shop's page off.
+        const keep = !backup.settings.shareId && settings.shareId
+          ? { shareId: settings.shareId, shareKey: settings.shareKey, shareName: backup.settings.shareName || settings.shareName }
+          : {};
+        replaceAll({ ...backup, settings: { ...backup.settings, ...keep } });
         toast(`Copy brought back: ${backup.entries.length} saved items`);
       }
     } catch (err) {
@@ -113,6 +206,8 @@ export function settingsScreen(data: AppData): HTMLElement {
         field('Warn me when money left is this much or less', 'settings-low',
           h('div', { class: 'amount-input' }, h('span', { class: 'amount-prefix', 'aria-hidden': 'true' }, currencySymbol(settings.currency)), low),
           `Now: ${money(settings.lowBalance)}`)),
+
+      shopPageSection(data),
 
       section('What I buy', 'How many I buy each day. It fills in by itself when I add what I bought.',
         activeItems.length
@@ -145,7 +240,7 @@ export function settingsScreen(data: AppData): HTMLElement {
 
       section('Start again', null,
         h('div', { class: 'btn-row btn-row-start' },
-          h('button', {
+          !settings.shareId && h('button', {
             class: 'btn btn-secondary',
             type: 'button',
             onClick: async () => {
@@ -168,14 +263,19 @@ export function settingsScreen(data: AppData): HTMLElement {
             onClick: async () => {
               const ok = await confirmDialog({
                 title: 'Delete everything?',
-                message: 'Everything on this phone will be deleted. You cannot get it back unless you saved a copy.',
+                message: settings.shareId
+                  ? "Everything on this phone will be deleted and the shop's page turned off. You cannot get it back unless you saved a copy."
+                  : 'Everything on this phone will be deleted. You cannot get it back unless you saved a copy.',
                 confirmLabel: 'Delete everything',
                 danger: true,
               });
-              if (ok) {
-                eraseAll();
-                toast('Everything deleted');
+              if (!ok) return;
+              if (settings.shareId && !(await stopSharing())) {
+                toast("Connect to the internet first, so the shop's page can be turned off too.");
+                return;
               }
+              eraseAll();
+              toast('Everything deleted');
             },
           }, icon('trash', 18), 'Delete everything'))),
     ),

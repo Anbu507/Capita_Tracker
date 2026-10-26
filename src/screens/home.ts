@@ -41,7 +41,7 @@ export function homeScreen(data: AppData): HTMLElement {
           h('button', { class: 'btn btn-primary', type: 'button', onClick: () => openEntrySheet({ kind: 'topup' }) }, icon('wallet'), 'Add money I gave'),
           h('button', { class: 'btn btn-secondary', type: 'button', onClick: () => openEntrySheet({ kind: 'purchase' }) }, icon('plus'), 'Add what I bought'),
         ),
-        h('p', { class: 'empty-foot' },
+        !settings.shareId && h('p', { class: 'empty-foot' },
           'Just trying the app? ',
           h('button', { class: 'link-btn', type: 'button', onClick: () => loadSample() }, 'Show an example'),
           ' (you can delete it later in Settings).'),

@@ -6,6 +6,7 @@ and charts of the balance and spending.
 
 - Works on phone, tablet and desktop (one responsive app).
 - No account, no server, works offline; data stays in this browser (export a backup in Settings).
+- **1.2.0:** a read-only **shop's page** the shopkeeper opens on their own phone.
 - **1.1.1:** every screen uses simple, everyday words ("Money left", "Add what I bought") so anyone
   — including the shopkeeper — can read it.
 - Design and decisions: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · changes: [CHANGELOG.md](CHANGELOG.md).
@@ -26,7 +27,7 @@ on the same Wi-Fi can open the "Network" address too.
 | Task | Command |
 |---|---|
 | Dev server | `npm run dev` |
-| Unit tests (ledger maths, money parsing, backup validation) | `npm test` |
+| Unit tests (ledger maths, money, backup, shared list, server rules) | `npm test` |
 | Type-check + production build into `dist/` | `npm run build` |
 | Preview the production build | `npm run preview` |
 
@@ -40,6 +41,21 @@ on the same Wi-Fi can open the "Network" address too.
 4. **Now and then:** Settings → **Save a copy**.
 
 Desktop shortcut: press **N** to add what you bought.
+
+## The shop's page (1.2.0)
+
+1. Settings → **Shop's page** → type your name → **Make the shop's page**.
+2. **Send link** (or **Copy link**) and send it to the shopkeeper once.
+3. They open it on their phone (and can **Add to Home screen**). It shows money left, money
+   given, spent and the history, and updates every time you save. They can't change anything.
+4. **Stop sharing** turns their page off.
+
+The page reads from a small free server in `worker/` (Cloudflare Worker + KV). To change it:
+
+```bash
+cd worker
+npx wrangler deploy
+```
 
 ## Open it on your phone
 

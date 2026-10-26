@@ -3,7 +3,9 @@
 | Version | What it is |
 |---|---|
 | **1.0.0** (git tag `v1.0.0`) | Base version: balance, daily log, history, charts, backup. |
-| **1.1.1** (this) | The same app with **every screen in simple, everyday words**, so someone who only uses WhatsApp, YouTube and UPI can read it. See [§13](#13-version-111--simple-everyday-words). No features added or removed. |
+| **1.1.1** | The same app with **every screen in simple, everyday words**, so someone who only uses WhatsApp, YouTube and UPI can read it. See [§13](#13-version-111--simple-everyday-words). |
+| **1.1.2** | Home buttons fit on phones; app published on GitHub Pages. |
+| **1.2.0** (this) | **Shop's page**: a read-only page on the shopkeeper's own phone with money left, money given and the history, updated every time I save. See [§14](#14-version-120--the-shops-page). |
 
 ## 1. The problem
 
@@ -256,6 +258,7 @@ are used only for low/negative balance, always with an icon and text.
 │   │   ├── icons.ts  router.ts  lifecycle.ts  sheet.ts  toast.ts  confirm.ts
 │   │   └── charts/           lineChart.ts  barChart.ts  sparkline.ts  chartCard.ts  scale.ts
 │   ├── screens/              home.ts  history.ts  insights.ts  settings.ts  entrySheet.ts  shared.ts
+│   │                         shopPage.ts (1.2.0: the shopkeeper's read-only page)
 │   └── styles/               tokens.css  base.css  layout.css  components.css  charts.css
 └── tests/                    ledger / money / dates tests (node --test, no extra packages)
 ```
@@ -268,8 +271,8 @@ added without redesigning the app.
 1. **Sync between devices / backup in the cloud.** Today the data lives on one device.
    If I want phone + laptop to share it, the plan is a small Cloudflare Worker + D1
    (same as the stopwatch project) behind `storage.ts`. Needs a decision on sign-in.
-2. **Shopkeeper access.** Should the shopkeeper see or confirm the log? That needs a
-   backend and sharing rules.
+2. **Shopkeeper access.** Done in 1.2.0 as a **read-only** page (§14). The shopkeeper can see,
+   not change or confirm, entries.
 3. **Price per item.** The app records the **total** the shop charged, not separate egg
    and banana prices. Per-item prices would allow an "egg price trend" chart, but make
    daily logging slower.
@@ -329,3 +332,64 @@ The words live in the screen files (`src/screens/*.ts`, plus the navigation labe
   word list once the language is decided.
 - An earlier 1.1.1 attempt with WhatsApp messages and a separate Shop view was set aside to keep
   the app simple. It is kept in git under the tag `v1.1.1-whatsapp` and is not part of this version.
+
+## 14. Version 1.2.0 — the shop's page
+
+### What it is
+
+I update my list every day on my phone. The shopkeeper opens **one link on their own phone** and
+always sees the latest: how much of my money is left with them, how much I gave in total, how
+much I spent, and the list of what I bought (date, 🥚 3 · 🍌 3, amount). Nothing else — no menus,
+no charts, no buttons to change anything.
+
+### Why it needs a small server now
+
+Until 1.1.2 the list lived only in my phone's browser, so another phone cannot read it. The
+smallest fix is an online **noticeboard**: my phone pins the latest list there after every save,
+and the shop's page reads it. It runs on the same free Cloudflare plan as the stopwatch project
+(a Worker + KV storage), so it costs nothing and never sleeps.
+
+```
+My phone (app on GitHub Pages)                    Shopkeeper's phone (same site, read-only page)
+  save ─▶ store ─▶ share.ts ──PUT (with secret key)──▶  Worker /api/ledger/<id>  ◀──GET── #/s/<id>
+                                                        └─ KV: { keyHash, ledger }
+```
+
+### Rules
+
+| Rule | How |
+|---|---|
+| Only people with the link can see it | The page id is 22 random characters; nobody can guess it. |
+| Only my phone can change it | My phone holds a separate random **secret key**; the Worker keeps only its SHA-256 hash and refuses writes without it. |
+| Share as little as possible | Only date, items, amount and kind (bought / money given), plus my name and the shop name. **Notes are never sent.** |
+| Stop any time | Settings → Stop sharing deletes the online copy; the old link then shows "This page was turned off". |
+| Works with bad internet | My phone retries when the internet comes back and on every app start. The shop's page keeps the last copy it saw and shows "Updated … ago". |
+| Opens from the home screen | The shop's phone remembers the page it last opened, so "Add to Home screen" opens straight to it. |
+
+### Shared data (what the noticeboard stores)
+
+```ts
+interface SharedLedger {
+  v: 1;
+  name: string;        // my name, as I typed it ("Anbu")
+  shopName: string;
+  currency: Currency;
+  updatedAt: number;   // ms
+  entries: { kind: 'purchase' | 'topup'; date: string; amount: Paise; t: number;
+             items?: { emoji: string; name: string; qty: number }[] }[];  // oldest first, no notes
+}
+```
+
+Built and checked by pure functions in `src/domain/sharedLedger.ts` (unit tested). The shop's page
+turns it back into normal entries and reuses the same `ledger.ts` maths, so both phones always
+show the same numbers.
+
+### Pieces
+
+| File | Job |
+|---|---|
+| `worker/src/index.ts` | The noticeboard: `GET /api/ledger/<id>`, `PUT` (needs key), `DELETE` (needs key). |
+| `src/domain/sharedLedger.ts` | Build the shared copy from my data; read and clean a copy from the server. |
+| `src/data/share.ts` | Turn sharing on/off, send after each save (short delay), retry when back online. |
+| `src/screens/shopPage.ts` | The shopkeeper's page at `#/s/<id>`. |
+| `src/screens/settings.ts` | "Shop's page" section: my name, Make the shop's page, Copy / Share link, Stop sharing. |

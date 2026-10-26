@@ -68,6 +68,21 @@ export const formatMonth = (key: string) => monthYear.format(fromISODate(`${key}
 /** "Oct 26" from "2026-10" */
 export const formatShortMonth = (key: string) => shortMonth.format(fromISODate(`${key}-01`));
 
+const clock = fmt({ hour: 'numeric', minute: '2-digit' });
+
+/** "just now", "5 min ago", "today at 8:15 AM", "yesterday at 8:15 AM", "Wed, 22 Oct at 8:15 AM". */
+export function formatUpdated(ms: number, nowMs = Date.now()): string {
+  const mins = Math.floor((nowMs - ms) / 60_000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
+  const d = new Date(ms);
+  const time = clock.format(d);
+  const diff = daysBetween(toISODate(d), toISODate(new Date(nowMs)));
+  if (diff === 0) return `today at ${time}`;
+  if (diff === 1) return `yesterday at ${time}`;
+  return `${formatRowDate(toISODate(d))} at ${time}`;
+}
+
 /** "Today", "Yesterday", or "Wed, 22 Oct". */
 export function formatRelativeDay(s: ISODate, now = today()): string {
   const diff = daysBetween(s, now);

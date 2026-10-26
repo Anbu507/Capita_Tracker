@@ -6,6 +6,18 @@ Since 1.1.2 the app is published at https://anbu507.github.io/Capita_Tracker/ (G
 so it works on mobile data and can be added to the phone's home screen. Every push to `main`
 publishes again.
 
+## 1.2.0 — the shop's page
+
+- **Shop's page**: Settings → Shop's page → *Make the shop's page* gives a link to send the shop
+  once. On their own phone they see **Money left**, **Money given**, **Spent** and the history
+  (date, 🥚 3 · 🍌 3, amount). It is read-only and updates by itself every time I save.
+- Only dates, items, amounts, my name and the shop name are shared — **notes stay on my phone**.
+  Only someone with the link can see it; only my phone (secret key) can change it.
+- *Stop sharing* turns the page off. *Delete everything* turns it off first. *Show an example* is
+  hidden while sharing, so example days never reach the shop.
+- New small server: `worker/` (Cloudflare Worker + KV, free) at
+  https://capital-tracker-api.stopwatch-worker.workers.dev.
+
 ## 1.1.2 — button fix on phones
 
 - Home: on phones, "Add what I bought" and "Add money I gave" now sit one per row, full width,

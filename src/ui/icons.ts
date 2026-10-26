@@ -19,6 +19,10 @@ const PATHS = {
   table: 'M3 5h18v14H3zM3 10h18M3 15h18M9 5v14',
   arrowRight: 'M5 12h14M13 6l6 6-6 6',
   info: 'M12 16v-4M12 8h.01M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z',
+  store: 'M3 9l1.5-5h15L21 9M3 9h18M3 9v1a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0V9M5 12.6V20h14v-7.4M10 20v-5h4v5',
+  send: 'M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z',
+  copy: 'M9 9h11v11H9zM5 15H4V4h11v1',
+  open: 'M14 4h6v6M20 4l-9 9M19 14v6H4V5h6',
 } as const;
 
 export type IconName = keyof typeof PATHS;

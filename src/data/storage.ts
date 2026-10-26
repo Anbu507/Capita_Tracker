@@ -3,6 +3,7 @@
 import { isISODate } from '../domain/dates.ts';
 import { defaultItems, defaultSettings, emptyData } from '../domain/defaults.ts';
 import { CURRENCIES } from '../domain/money.ts';
+import { SHARE_ID, SHARE_KEY } from '../domain/sharedLedger.ts';
 import type { AppData, Entry, EntryItem, Item, Settings } from '../domain/types.ts';
 
 export const STORAGE_KEY = 'capital-tracker/v1';
@@ -55,12 +56,18 @@ function cleanSettings(v: unknown): Settings {
   const d = defaultSettings();
   if (!isObj(v)) return d;
   const low = int(v.lowBalance);
+  const shareId = str(v.shareId, 64);
+  const shareKey = str(v.shareKey, 128);
+  const sharing = SHARE_ID.test(shareId) && SHARE_KEY.test(shareKey);
   return {
     shopName: str(v.shopName, 40),
     currency: CURRENCIES.some((c) => c.code === v.currency) ? (v.currency as Settings['currency']) : d.currency,
     lowBalance: low >= 0 ? low : d.lowBalance,
     theme: v.theme === 'light' || v.theme === 'dark' ? v.theme : 'system',
     lastBackupAt: int(v.lastBackupAt) > 0 ? int(v.lastBackupAt) : null,
+    shareName: str(v.shareName, 40),
+    shareId: sharing ? shareId : '',
+    shareKey: sharing ? shareKey : '',
   };
 }
 

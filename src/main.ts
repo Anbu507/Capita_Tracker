@@ -6,16 +6,18 @@ import './styles/charts.css';
 
 import type { AppData, Theme } from './domain/types.ts';
 import { load, onExternalChange, requestPersistence } from './data/storage.ts';
+import { initSharing, scheduleShare } from './data/share.ts';
 import { getData, hydrate, lastSaveFailed, subscribe } from './data/store.ts';
 import { openEntrySheet } from './screens/entrySheet.ts';
 import { historyScreen } from './screens/history.ts';
 import { homeScreen } from './screens/home.ts';
 import { insightsScreen } from './screens/insights.ts';
 import { settingsScreen } from './screens/settings.ts';
+import { lastViewedShopPage, shopPageScreen } from './screens/shopPage.ts';
 import { $, h, prefersReducedMotion } from './ui/dom.ts';
 import { icon, type IconName } from './ui/icons.ts';
 import { disposeAll } from './ui/lifecycle.ts';
-import { currentRoute, onRouteChange, ROUTES, type Route } from './ui/router.ts';
+import { currentRoute, onRouteChange, ROUTES, type NavRoute, type Route } from './ui/router.ts';
 import { toast } from './ui/toast.ts';
 
 const SCREENS: Record<Route, (data: AppData) => HTMLElement> = {
@@ -23,8 +25,10 @@ const SCREENS: Record<Route, (data: AppData) => HTMLElement> = {
   history: historyScreen,
   insights: insightsScreen,
   settings: settingsScreen,
+  // The shopkeeper's page reads the shared list from the internet, not this phone's data.
+  shopPage: () => shopPageScreen(),
 };
-const NAV_ICONS: Record<Route, IconName> = { home: 'home', history: 'history', insights: 'chart', settings: 'settings' };
+const NAV_ICONS: Record<NavRoute, IconName> = { home: 'home', history: 'history', insights: 'chart', settings: 'settings' };
 
 const outlet = $('#outlet');
 
@@ -79,6 +83,8 @@ function render(): void {
 
   disposeAll();
   const route = currentRoute();
+  // The shop's page has no menu around it: the shopkeeper only needs that one page.
+  document.body.classList.toggle('view-mode', route === 'shopPage');
   outlet.replaceChildren(SCREENS[route](getData()));
   markActive(route);
 
@@ -109,6 +115,11 @@ function navigate(): void {
 
 const result = load();
 hydrate(result.data);
+
+// The shopkeeper's phone has no list of its own: opening the app from its home screen goes back to
+// the shop's page it opened before.
+const viewing = lastViewedShopPage();
+if (currentRoute() === 'home' && !result.data.entries.length && viewing) history.replaceState(null, '', `#/s/${viewing}`);
 applyTheme(result.data.settings.theme);
 buildNav();
 render();
@@ -117,6 +128,7 @@ let warnedSave = false;
 subscribe((data) => {
   applyTheme(data.settings.theme);
   render();
+  scheduleShare();
   if (lastSaveFailed() && !warnedSave) {
     warnedSave = true;
     toast('Could not save. The phone may be full.', undefined, 8000);
@@ -125,6 +137,7 @@ subscribe((data) => {
 onRouteChange(navigate);
 onExternalChange(hydrate);
 requestPersistence();
+initSharing();
 
 if (!result.ok) {
   toast(
@@ -139,7 +152,7 @@ if (!result.ok) {
 // Keyboard shortcut on desktop: "n" opens "Add what I bought".
 window.addEventListener('keydown', (e) => {
   const t = e.target as HTMLElement;
-  if (e.key !== 'n' || e.ctrlKey || e.metaKey || e.altKey || t.closest('input, textarea, select, dialog')) return;
+  if (e.key !== 'n' || e.ctrlKey || e.metaKey || e.altKey || currentRoute() === 'shopPage' || t.closest('input, textarea, select, dialog')) return;
   e.preventDefault();
   openEntrySheet({ kind: 'purchase' });
 });
