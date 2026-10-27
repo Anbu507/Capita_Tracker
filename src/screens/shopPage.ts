@@ -1,6 +1,6 @@
 // The shop's page: what the shopkeeper sees on their own phone at #/s/<id>.
 // Read-only and as plain as possible — money left, money given, spent, and the history.
-import { SHARE_API } from '../config.ts';
+import { fetchWithin, SHARE_API } from '../config.ts';
 import { formatMonth, formatRelativeDay, formatUpdated } from '../domain/dates.ts';
 import { balanceOf, groupByMonth, rangeTotals, runningBalance, type LedgerRow } from '../domain/ledger.ts';
 import { formatMoney, formatSigned } from '../domain/money.ts';
@@ -15,7 +15,12 @@ import { emptyState, itemsSummary } from './shared.ts';
 const CACHE = 'capital-tracker/view/';
 /** The shop's page last opened on this phone — "Add to Home screen" reopens it. */
 export const LAST_VIEWED = 'capital-tracker/viewing';
-const REFRESH_MS = 60_000;
+/** Reconnect waits for the live line (ms), growing up to the last value. */
+const RECONNECT_MS = [1_000, 2_000, 5_000, 10_000, 15_000];
+/** Keeps mobile networks from silently dropping an idle live line. */
+const PING_MS = 25_000;
+/** Without a live line, check this often; with one, just refresh the "updated … ago" text. */
+const TICK_MS = 30_000;
 
 type Load = 'loading' | 'fresh' | 'offline' | 'gone';
 
@@ -50,28 +55,38 @@ export function shopPageScreen(): HTMLElement {
   const id = shopPageId()!;
   const root = h('div', { class: 'screen view' });
   let ledger = readCache(id);
+  let load: Load = 'loading';
   let busy = false;
+  let live = false;
+  let socket: WebSocket | null = null;
+  let attempts = 0;
+  let reconnectTimer: number | undefined;
+  let pingTimer: number | undefined;
+  let disposed = false;
 
-  const paint = (load: Load) => {
-    root.replaceChildren(...content(ledger, load, refresh));
+  const paint = (next: Load = load) => {
+    load = next;
+    root.replaceChildren(...content(ledger, load, live, refresh));
   };
 
+  const show = (fresh: SharedLedger | null) => {
+    ledger = fresh;
+    writeCache(id, fresh);
+    paint(fresh ? 'fresh' : 'gone');
+  };
+
+  // Plain request: the first look, the Refresh button, and the backup when the live line is down.
   const refresh = async () => {
     if (busy) return;
     busy = true;
     if (!ledger) paint('loading');
     try {
-      const res = await fetch(`${SHARE_API}/api/ledger/${id}`, { cache: 'no-store' });
-      if (res.status === 404) {
-        ledger = null;
-        writeCache(id, null);
-        paint('gone');
-      } else {
+      const res = await fetchWithin(`${SHARE_API}/api/ledger/${id}`, { cache: 'no-store' });
+      if (res.status === 404) show(null);
+      else {
         const fresh = res.ok ? readShared(await res.json()) : null;
         if (!fresh) throw new Error('bad reply');
-        ledger = fresh;
-        writeCache(id, fresh);
-        paint('fresh');
+        show(fresh);
       }
     } catch {
       paint('offline');
@@ -79,22 +94,84 @@ export function shopPageScreen(): HTMLElement {
     busy = false;
   };
 
+  // Live line: the server pushes every change the moment the customer saves it.
+  const visible = () => document.visibilityState === 'visible';
+  const connect = () => {
+    if (disposed || socket || !visible()) return;
+    let ws: WebSocket;
+    try {
+      ws = new WebSocket(`${SHARE_API.replace(/^http/, 'ws')}/api/ledger/${id}/live`);
+    } catch {
+      return reconnectLater();
+    }
+    socket = ws;
+    ws.onopen = () => {
+      attempts = 0;
+      live = true;
+      paint();
+      pingTimer = window.setInterval(() => ws.readyState === WebSocket.OPEN && ws.send('ping'), PING_MS);
+    };
+    ws.onmessage = (e) => {
+      if (e.data === 'pong') return;
+      try {
+        const msg = JSON.parse(String(e.data)) as { ledger?: unknown; gone?: boolean };
+        if (msg.gone) show(null);
+        else {
+          const fresh = readShared(msg.ledger);
+          if (fresh) show(fresh);
+        }
+      } catch {
+        /* ignore anything unexpected */
+      }
+    };
+    ws.onclose = () => {
+      window.clearInterval(pingTimer);
+      socket = null;
+      if (disposed) return;
+      if (live) {
+        live = false;
+        paint();
+      }
+      reconnectLater();
+    };
+    ws.onerror = () => ws.close();
+  };
+  const reconnectLater = () => {
+    window.clearTimeout(reconnectTimer);
+    if (disposed || !visible() || load === 'gone') return;
+    reconnectTimer = window.setTimeout(connect, RECONNECT_MS[Math.min(attempts++, RECONNECT_MS.length - 1)]);
+  };
+
   paint('loading');
   void refresh();
+  connect();
 
-  // Keep it current while it is open: every minute, and whenever the phone comes back to this page.
-  const timer = window.setInterval(() => document.visibilityState === 'visible' && void refresh(), REFRESH_MS);
-  const onVisible = () => document.visibilityState === 'visible' && void refresh();
+  const tick = window.setInterval(() => {
+    if (!visible()) return;
+    if (live) paint(); // keeps "updated 5 min ago" true
+    else void refresh();
+  }, TICK_MS);
+  // Phones pause hidden pages: catch up and reconnect as soon as the page is looked at again.
+  const onVisible = () => {
+    if (visible()) {
+      void refresh();
+      connect();
+    } else socket?.close();
+  };
   document.addEventListener('visibilitychange', onVisible);
   onDispose(() => {
-    window.clearInterval(timer);
+    disposed = true;
+    window.clearInterval(tick);
+    window.clearTimeout(reconnectTimer);
+    window.clearInterval(pingTimer);
     document.removeEventListener('visibilitychange', onVisible);
+    socket?.close();
   });
 
   return root;
 }
 
-function content(ledger: SharedLedger | null, load: Load, refresh: () => void): HTMLElement[] {
+function content(ledger: SharedLedger | null, load: Load, live: boolean, refresh: () => void): HTMLElement[] {
   const retry = h('button', { class: 'btn btn-secondary btn-sm', type: 'button', onClick: refresh }, 'Refresh');
 
   if (load === 'gone') {
@@ -144,7 +221,9 @@ function content(ledger: SharedLedger | null, load: Load, refresh: () => void): 
       h('div', { class: 'view-totals' },
         h('p', null, h('span', null, 'Money given'), h('strong', null, fm(totals.added))),
         h('p', null, h('span', null, 'Spent'), h('strong', null, fm(totals.spent)))),
-      h('div', { class: 'view-status' }, h('p', null, status), retry)),
+      h('div', { class: 'view-status' },
+        h('p', null, live && h('span', { class: 'live-badge' }, 'Live'), status),
+        retry)),
     entries.length
       ? h('div', { class: 'history-list' },
           groups.map((g) =>

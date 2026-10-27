@@ -4,6 +4,12 @@
   "name": "capital-tracker-api",
   "main": "src/index.ts",
   "compatibility_date": "2026-09-01",
+  // One Durable Object per shared list: instant reads and a live line to open shop's pages.
+  "durable_objects": {
+    "bindings": [{ "name": "LEDGER", "class_name": "LedgerObject" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LedgerObject"] }],
+  // Lists shared with 1.2.0 were kept here; each moves into its Durable Object on first use.
   "kv_namespaces": [
     {
       "binding": "LEDGERS",

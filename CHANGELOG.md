@@ -6,6 +6,20 @@ Since 1.1.2 the app is published at https://anbu507.github.io/Capita_Tracker/ (G
 so it works on mobile data and can be added to the phone's home screen. Every push to `main`
 publishes again.
 
+## 1.2.1 — the shop's page updates instantly
+
+- The shopkeeper's page now changes **about half a second** after I tap Save (measured 0.48–0.51 s
+  on the live server). Before it could take up to ~2 minutes.
+- My phone sends right after saving (no 1-second wait).
+- **Live line**: while the shop's page is open, the server pushes each change to it at once over a
+  WebSocket. A green **Live** badge shows when it is connected; it reconnects by itself, and falls
+  back to checking every 30 seconds if the line is down.
+- Server storage moved from Cloudflare KV (could lag up to a minute between cities) to a Durable
+  Object per shared list (instant). Pages made with 1.2.0 moved over automatically — same link,
+  same key.
+- Safety: every request gives up after 10 seconds, and my phone retries every 20 seconds while
+  there is no connection, so it never stays stuck on "Updating…".
+
 ## 1.2.0 — the shop's page
 
 - **Shop's page**: Settings → Shop's page → *Make the shop's page* gives a link to send the shop

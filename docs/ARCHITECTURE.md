@@ -5,7 +5,8 @@
 | **1.0.0** (git tag `v1.0.0`) | Base version: balance, daily log, history, charts, backup. |
 | **1.1.1** | The same app with **every screen in simple, everyday words**, so someone who only uses WhatsApp, YouTube and UPI can read it. See [§13](#13-version-111--simple-everyday-words). |
 | **1.1.2** | Home buttons fit on phones; app published on GitHub Pages. |
-| **1.2.0** (this) | **Shop's page**: a read-only page on the shopkeeper's own phone with money left, money given and the history, updated every time I save. See [§14](#14-version-120--the-shops-page). |
+| **1.2.0** | **Shop's page**: a read-only page on the shopkeeper's own phone with money left, money given and the history, updated every time I save. See [§14](#14-version-120--the-shops-page). |
+| **1.2.1** (this) | The shop's page updates **instantly** (≈ 0.5 s): Durable Object storage + a live WebSocket line. See §14 "Speed". |
 
 ## 1. The problem
 
@@ -347,12 +348,14 @@ no charts, no buttons to change anything.
 Until 1.1.2 the list lived only in my phone's browser, so another phone cannot read it. The
 smallest fix is an online **noticeboard**: my phone pins the latest list there after every save,
 and the shop's page reads it. It runs on the same free Cloudflare plan as the stopwatch project
-(a Worker + KV storage), so it costs nothing and never sleeps.
+(a Worker + a Durable Object per shared list), so it costs nothing and never sleeps.
 
 ```
-My phone (app on GitHub Pages)                    Shopkeeper's phone (same site, read-only page)
-  save ─▶ store ─▶ share.ts ──PUT (with secret key)──▶  Worker /api/ledger/<id>  ◀──GET── #/s/<id>
-                                                        └─ KV: { keyHash, ledger }
+My phone (app on GitHub Pages)                          Shopkeeper's phone (same site, read-only page)
+  save ─▶ store ─▶ share.ts ──PUT (secret key)──▶ Worker ─▶ Durable Object for <id>
+                                                            │  storage: { keyHash, ledger }
+                                                            └─ live line (WebSocket) ──push──▶ #/s/<id>
+                                                               GET (first look / fallback) ◀──
 ```
 
 ### Rules
@@ -363,7 +366,7 @@ My phone (app on GitHub Pages)                    Shopkeeper's phone (same site,
 | Only my phone can change it | My phone holds a separate random **secret key**; the Worker keeps only its SHA-256 hash and refuses writes without it. |
 | Share as little as possible | Only date, items, amount and kind (bought / money given), plus my name and the shop name. **Notes are never sent.** |
 | Stop any time | Settings → Stop sharing deletes the online copy; the old link then shows "This page was turned off". |
-| Works with bad internet | My phone retries when the internet comes back and on every app start. The shop's page keeps the last copy it saw and shows "Updated … ago". |
+| Works with bad internet | Every request gives up after 10 s. My phone retries every 20 s, when the internet comes back and on every app start. The shop's page keeps the last copy it saw and shows "Updated … ago". |
 | Opens from the home screen | The shop's phone remembers the page it last opened, so "Add to Home screen" opens straight to it. |
 
 ### Shared data (what the noticeboard stores)
@@ -388,8 +391,26 @@ show the same numbers.
 
 | File | Job |
 |---|---|
-| `worker/src/index.ts` | The noticeboard: `GET /api/ledger/<id>`, `PUT` (needs key), `DELETE` (needs key). |
+| `worker/src/ledger.ts` | The rules (unit tested): `GET` the list, `PUT` / `DELETE` with the key; reports what changed. |
+| `worker/src/index.ts` | Worker + `LedgerObject` Durable Object: storage, the live line `/api/ledger/<id>/live`, moving 1.2.0 lists over from KV. |
 | `src/domain/sharedLedger.ts` | Build the shared copy from my data; read and clean a copy from the server. |
 | `src/data/share.ts` | Turn sharing on/off, send after each save (short delay), retry when back online. |
 | `src/screens/shopPage.ts` | The shopkeeper's page at `#/s/<id>`. |
 | `src/screens/settings.ts` | "Shop's page" section: my name, Make the shop's page, Copy / Share link, Stop sharing. |
+
+### Speed (1.2.1)
+
+| Step | Time |
+|---|---|
+| I tap Save → my phone sends | ≈ 0.15 s (only to group several quick changes) |
+| Server stores it and pushes it down the live line | a few hundredths of a second |
+| Shop's page redraws | instant |
+| **Save → shopkeeper sees it** | **≈ 0.5 s measured on the live server** |
+
+1.2.0 needed up to ~2 minutes: the page asked once a minute, and KV can take up to a minute to
+show a change in another city. 1.2.1 keeps each list in its own **Durable Object** (one place,
+always current) and keeps a **WebSocket** open to every shop's page that is on screen. Idle lines
+"hibernate", so they cost nothing on the free plan. The page pings every 25 s (answered without
+waking the object), reconnects after 1–15 s if the line drops, re-checks when the phone shows the
+page again, and checks every 30 s while the line is down. A green **Live** badge shows when it is
+connected.

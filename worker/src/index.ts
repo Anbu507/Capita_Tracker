@@ -1,94 +1,90 @@
-// The noticeboard for the shop's page. One record per shared list, stored in Cloudflare KV:
-//   GET    /api/ledger/<id>  → the latest shared list (anyone with the link)
-//   PUT    /api/ledger/<id>  → replace it            (needs "Authorization: Bearer <secret key>")
-//   DELETE /api/ledger/<id>  → stop sharing          (needs the same key)
-// The first PUT for an id claims it: only the SHA-256 of the key is kept, and later writes must match.
-
-/** The two KV calls we use (keeps this file free of Cloudflare-only types, so it can be unit tested). */
-export interface KV {
-  get(key: string, type: 'json'): Promise<unknown>;
-  put(key: string, value: string): Promise<void>;
-  delete(key: string): Promise<void>;
-}
+// The noticeboard for the shop's page. Each shared list lives in its own Durable Object, which
+// answers instantly (no caching delay between cities) and pushes every change straight to the
+// shop's pages that are open, over a WebSocket ("live line").
+import { CORS, handleLedger, reply, ROUTE, type LedgerStore, type Stored } from './ledger.ts';
 
 export interface Env {
-  LEDGERS: KV;
+  /** Lists shared before 1.2.1 were kept in KV; they move into their Durable Object on first use. */
+  LEDGERS: KVNamespace;
+  LEDGER: DurableObjectNamespace;
 }
 
-interface Stored {
-  keyHash: string;
-  ledger: unknown;
-}
+export default {
+  async fetch(req: Request, env: Env): Promise<Response> {
+    if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+    const match = ROUTE.exec(new URL(req.url).pathname);
+    if (!match) return reply(404, { error: 'not found' });
+    // One object per list id: every phone talking about this list reaches the same place.
+    return env.LEDGER.get(env.LEDGER.idFromName(match[1])).fetch(req);
+  },
+} satisfies ExportedHandler<Env>;
 
-const MAX_BODY = 300_000; // bytes — years of daily entries fit in a fraction of this
-const ROUTE = /^\/api\/ledger\/([A-Za-z0-9_-]{16,64})$/;
-
-// Reads are protected by the unguessable id and writes by the key (no cookies), so any origin may call.
-const CORS = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, PUT, DELETE, OPTIONS',
-  'access-control-allow-headers': 'authorization, content-type',
-  'access-control-max-age': '86400',
-};
-
-function reply(status: number, body?: unknown): Response {
-  return new Response(body === undefined ? null : JSON.stringify(body), {
-    status,
-    headers: { ...CORS, 'content-type': 'application/json', 'cache-control': 'no-store' },
-  });
-}
-
-async function sha256(text: string): Promise<string> {
-  const bytes = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)));
-  return [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-function bearer(req: Request): string | null {
-  const m = /^Bearer ([A-Za-z0-9_-]{32,128})$/.exec(req.headers.get('authorization') ?? '');
-  return m ? m[1] : null;
-}
-
-function looksLikeLedger(v: unknown): boolean {
-  return typeof v === 'object' && v !== null && (v as { v?: unknown }).v === 1 && Array.isArray((v as { entries?: unknown }).entries);
-}
-
-export async function handle(req: Request, env: Env): Promise<Response> {
-  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
-
-  const match = ROUTE.exec(new URL(req.url).pathname);
-  if (!match) return reply(404, { error: 'not found' });
-  const id = match[1];
-
-  if (req.method === 'GET') {
-    const stored = (await env.LEDGERS.get(id, 'json')) as Stored | null;
-    return stored ? reply(200, stored.ledger) : reply(404, { error: 'not found' });
+export class LedgerObject implements DurableObject {
+  constructor(
+    private ctx: DurableObjectState,
+    private env: Env,
+  ) {
+    // Keep-alive pings from the shop's page are answered without waking this object up.
+    ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'));
   }
 
-  if (req.method !== 'PUT' && req.method !== 'DELETE') return reply(405, { error: 'method not allowed' });
+  async fetch(req: Request): Promise<Response> {
+    const [, id, live] = ROUTE.exec(new URL(req.url).pathname)!;
 
-  const key = bearer(req);
-  if (!key) return reply(401, { error: 'missing key' });
-  const keyHash = await sha256(key);
-  const stored = (await env.LEDGERS.get(id, 'json')) as Stored | null;
-  if (stored && stored.keyHash !== keyHash) return reply(403, { error: 'wrong key' });
+    if (live) {
+      if (req.headers.get('upgrade') !== 'websocket') return reply(426, { error: 'expected websocket' });
+      const [client, server] = Object.values(new WebSocketPair());
+      this.ctx.acceptWebSocket(server); // hibernates while idle, so open pages cost nothing
+      const stored = await this.load(id);
+      server.send(JSON.stringify(stored ? { ledger: stored.ledger } : { gone: true }));
+      return new Response(null, { status: 101, webSocket: client });
+    }
 
-  if (req.method === 'DELETE') {
-    if (stored) await env.LEDGERS.delete(id);
-    return reply(204);
+    const store: LedgerStore = {
+      load: () => this.load(id),
+      save: (s) => this.ctx.storage.put('list', s),
+      remove: async () => {
+        await this.ctx.storage.deleteAll();
+        await this.env.LEDGERS.delete(id);
+      },
+    };
+    const { response, changed } = await handleLedger(req, store);
+    if (changed !== undefined) this.broadcast(changed === null ? { gone: true } : { ledger: changed });
+    return response;
   }
 
-  const text = await req.text();
-  if (text.length > MAX_BODY) return reply(413, { error: 'too large' });
-  let ledger: unknown;
-  try {
-    ledger = JSON.parse(text);
-  } catch {
-    return reply(400, { error: 'not json' });
+  /** The stored list; moves a pre-1.2.1 list over from KV the first time it is needed. */
+  private async load(id: string): Promise<Stored | null> {
+    const stored = await this.ctx.storage.get<Stored>('list');
+    if (stored) return stored;
+    const old = (await this.env.LEDGERS.get(id, 'json')) as Stored | null;
+    if (!old) return null;
+    await this.ctx.storage.put('list', old);
+    await this.env.LEDGERS.delete(id);
+    return old;
   }
-  if (!looksLikeLedger(ledger)) return reply(400, { error: 'not a shared list' });
 
-  await env.LEDGERS.put(id, JSON.stringify({ keyHash, ledger } satisfies Stored));
-  return reply(204);
+  private broadcast(message: unknown): void {
+    const text = JSON.stringify(message);
+    for (const ws of this.ctx.getWebSockets()) {
+      try {
+        ws.send(text);
+      } catch {
+        /* that page already went away */
+      }
+    }
+  }
+
+  webSocketMessage(): void {
+    /* pages only send pings, which the auto-response answers */
+  }
+
+  webSocketClose(ws: WebSocket, code: number): void {
+    try {
+      // 1005/1006 mean "no code / dropped" and may not be sent back.
+      ws.close(code === 1005 || code === 1006 ? 1000 : code, 'closing');
+    } catch {
+      /* already closed */
+    }
+  }
 }
-
-export default { fetch: handle };

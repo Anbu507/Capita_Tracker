@@ -1153,3 +1153,28 @@ input::placeholder {
 .share-actions {
   margin: 12px 0 16px;
 }
+
+/* 1.2.1: shown on the shop's page while updates arrive instantly */
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 8px;
+  color: var(--good-text);
+  font-weight: 700;
+}
+
+.live-badge::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}

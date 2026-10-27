@@ -1,17 +1,21 @@
 // Keeps the shop's page up to date: turn sharing on/off, and send my list after every change.
 // Sends are serialised (never two at once) and skipped when nothing the shop sees has changed.
-import { SHARE_API } from '../config.ts';
+import { fetchWithin, SHARE_API } from '../config.ts';
 import { randomToken, sharedSignature, toShared } from '../domain/sharedLedger.ts';
 import { getData, updateSettings } from './store.ts';
 
 export type ShareState = 'off' | 'sending' | 'sent' | 'waiting';
 
 const SENT_AT = 'capital-tracker/share-sent-at';
-const DELAY_MS = 1200;
+// Just long enough to send several quick changes as one; the shop sees it about a second later.
+const DELAY_MS = 150;
+/** While there is no connection, try again this often (also on app start and when back online). */
+const RETRY_MS = 20_000;
 
 let state: ShareState = 'off';
 let lastSent = '';
 let timer: number | undefined;
+let retryTimer: number | undefined;
 let current: Promise<boolean> | null = null;
 let again = false;
 const listeners = new Set<() => void>();
@@ -48,7 +52,7 @@ export function shopLink(id: string): string {
 
 async function put(id: string, key: string, body: string): Promise<boolean> {
   try {
-    const res = await fetch(endpoint(id), { method: 'PUT', headers: { ...auth(key), 'content-type': 'application/json' }, body });
+    const res = await fetchWithin(endpoint(id), { method: 'PUT', headers: { ...auth(key), 'content-type': 'application/json' }, body });
     return res.ok;
   } catch {
     return false;
@@ -82,6 +86,8 @@ async function send(): Promise<boolean> {
     }
   }
   setState(ok ? 'sent' : 'waiting');
+  window.clearTimeout(retryTimer);
+  if (!ok) retryTimer = window.setTimeout(() => void send(), RETRY_MS);
   if (again) {
     again = false;
     return send();
@@ -89,7 +95,7 @@ async function send(): Promise<boolean> {
   return ok;
 }
 
-/** Called after every change to my data: sends a little later, so quick edits go up as one. */
+/** Called after every change to my data: sends almost at once (quick edits still go up as one). */
 export function scheduleShare(): void {
   if (!getData().settings.shareId) {
     if (state !== 'off') setState('off');
@@ -115,12 +121,13 @@ export async function startSharing(name: string): Promise<boolean> {
 /** Deletes the online copy, then forgets the link. Needs internet, so nothing is left behind. */
 export async function stopSharing(): Promise<boolean> {
   window.clearTimeout(timer);
+  window.clearTimeout(retryTimer);
   again = false;
   if (current) await current; // a send still on its way would otherwise put the page back
   const { shareId, shareKey } = getData().settings;
   if (shareId) {
     try {
-      const res = await fetch(endpoint(shareId), { method: 'DELETE', headers: auth(shareKey) });
+      const res = await fetchWithin(endpoint(shareId), { method: 'DELETE', headers: auth(shareKey) });
       if (!res.ok && res.status !== 404) return false;
     } catch {
       return false;

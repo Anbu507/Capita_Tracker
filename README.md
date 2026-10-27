@@ -47,10 +47,11 @@ Desktop shortcut: press **N** to add what you bought.
 1. Settings → **Shop's page** → type your name → **Make the shop's page**.
 2. **Send link** (or **Copy link**) and send it to the shopkeeper once.
 3. They open it on their phone (and can **Add to Home screen**). It shows money left, money
-   given, spent and the history, and updates every time you save. They can't change anything.
+   given, spent and the history, and changes about **half a second** after you save (green
+   **Live** badge). They can't change anything.
 4. **Stop sharing** turns their page off.
 
-The page reads from a small free server in `worker/` (Cloudflare Worker + KV). To change it:
+The page reads from a small free server in `worker/` (Cloudflare Worker + Durable Object). To change it:
 
 ```bash
 cd worker
