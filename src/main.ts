@@ -13,11 +13,11 @@ import { historyScreen } from './screens/history.ts';
 import { homeScreen } from './screens/home.ts';
 import { insightsScreen } from './screens/insights.ts';
 import { settingsScreen } from './screens/settings.ts';
-import { lastViewedShopPage, shopPageScreen } from './screens/shopPage.ts';
+import { choseApp, lastViewedShopPage, shopPageScreen } from './screens/shopPage.ts';
 import { $, h, prefersReducedMotion } from './ui/dom.ts';
 import { icon, type IconName } from './ui/icons.ts';
 import { disposeAll } from './ui/lifecycle.ts';
-import { currentRoute, onRouteChange, ROUTES, type NavRoute, type Route } from './ui/router.ts';
+import { currentRoute, onRouteChange, ROUTES, startOnShopPage, type NavRoute, type Route } from './ui/router.ts';
 import { toast } from './ui/toast.ts';
 
 const SCREENS: Record<Route, (data: AppData) => HTMLElement> = {
@@ -118,8 +118,11 @@ hydrate(result.data);
 
 // The shopkeeper's phone has no list of its own: opening the app from its home screen goes back to
 // the shop's page it opened before.
-const viewing = lastViewedShopPage();
-if (currentRoute() === 'home' && !result.data.entries.length && viewing) history.replaceState(null, '', `#/s/${viewing}`);
+const lastShopPage = lastViewedShopPage();
+const installed = matchMedia('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+if (startOnShopPage({ installed, route: currentRoute(), hasEntries: result.data.entries.length > 0, lastShopPage, choseApp: choseApp() })) {
+  history.replaceState(null, '', `#/s/${lastShopPage}`);
+}
 applyTheme(result.data.settings.theme);
 buildNav();
 render();

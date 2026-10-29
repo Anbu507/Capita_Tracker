@@ -15,6 +15,8 @@ import { emptyState, itemsSummary } from './shared.ts';
 const CACHE = 'capital-tracker/view/';
 /** The shop's page last opened on this phone — "Add to Home screen" reopens it. */
 export const LAST_VIEWED = 'capital-tracker/viewing';
+/** Set when someone on this phone taps "Open the app" on a shop's page: stop jumping to it. */
+const CHOSE_APP = 'capital-tracker/chose-app';
 /** Reconnect waits for the live line (ms), growing up to the last value. */
 const RECONNECT_MS = [1_000, 2_000, 5_000, 10_000, 15_000];
 /** Keeps mobile networks from silently dropping an idle live line. */
@@ -43,6 +45,29 @@ function writeCache(id: string, ledger: SharedLedger | null): void {
   }
 }
 
+export function choseApp(): boolean {
+  try {
+    return localStorage.getItem(CHOSE_APP) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function setChoseApp(on: boolean): void {
+  try {
+    if (on) localStorage.setItem(CHOSE_APP, '1');
+    else localStorage.removeItem(CHOSE_APP);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Home → "Open the shop's page" (for the shopkeeper, if they ever land in the empty app). */
+export function openLastShopPage(id: string): void {
+  setChoseApp(false);
+  location.hash = `#/s/${id}`;
+}
+
 export function lastViewedShopPage(): string | null {
   try {
     return localStorage.getItem(LAST_VIEWED);
@@ -64,9 +89,21 @@ export function shopPageScreen(): HTMLElement {
   let pingTimer: number | undefined;
   let disposed = false;
 
+  // For me, if this phone opened the shop's page: a way back to my own app.
+  const toApp = h('p', { class: 'view-to-app' },
+    'Want to add your own purchases? ',
+    h('button', {
+      class: 'link-btn',
+      type: 'button',
+      onClick: () => {
+        setChoseApp(true);
+        location.hash = '#/';
+      },
+    }, 'Open the app'));
+
   const paint = (next: Load = load) => {
     load = next;
-    root.replaceChildren(...content(ledger, load, live, refresh));
+    root.replaceChildren(...content(ledger, load, live, refresh), toApp);
   };
 
   const show = (fresh: SharedLedger | null) => {

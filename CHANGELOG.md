@@ -6,6 +6,17 @@ Since 1.1.2 the app is published at https://anbu507.github.io/Capita_Tracker/ (G
 so it works on mobile data and can be added to the phone's home screen. Every push to `main`
 publishes again.
 
+## 1.2.2 — my phone no longer gets stuck on the shop's page
+
+- Bug: if my phone had opened the shop's link once and had no purchases of its own, opening the
+  app always jumped to the shop's page (no menu, no ＋), so I could not add what I bought.
+- Now only the shopkeeper's **home-screen app** jumps to their page. Opening the app's address in
+  a browser always shows my own app.
+- The shop's page has a small "Want to add your own purchases? **Open the app**" line, and that
+  choice is remembered on that phone.
+- If the shopkeeper ever lands in the empty app, Home shows **Open the shop's page**.
+- Settings → Shop's page now says the link only *shows* the list; purchases are added in the app.
+
 ## 1.2.1 — the shop's page updates instantly
 
 - The shopkeeper's page now changes **about half a second** after I tap Save (measured 0.48–0.51 s

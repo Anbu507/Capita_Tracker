@@ -115,7 +115,7 @@ function shopPageSection(data: AppData): HTMLElement {
       }, icon('send', 18), 'Send link')
     : null;
 
-  return section("Shop's page", 'Send this link to the shop once. Their page updates by itself every time you save.',
+  return section("Shop's page", 'Send this link to the shop once. It only shows your list — you keep adding what you bought here, in this app. Their page updates by itself every time you save.',
     h('div', { class: 'share-status-row' }, status, retry),
     linkInput,
     h('div', { class: 'btn-row btn-row-start share-actions' },

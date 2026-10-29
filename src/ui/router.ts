@@ -28,6 +28,15 @@ export function onRouteChange(cb: (route: Route) => void): void {
   window.addEventListener('hashchange', () => cb(currentRoute()));
 }
 
+/**
+ * Whether opening the app should go straight to a shop's page. Only for the shopkeeper's
+ * home-screen app: installed, nothing of its own saved, a shop's page opened before, and nobody on
+ * this phone chose "Open the app" instead. Opening the address in a browser always shows the app.
+ */
+export function startOnShopPage(o: { installed: boolean; route: Route; hasEntries: boolean; lastShopPage: string | null; choseApp: boolean }): boolean {
+  return o.installed && o.route === 'home' && !o.hasEntries && !!o.lastShopPage && !o.choseApp;
+}
+
 export function go(route: NavRoute): void {
   const hash = ROUTES.find((r) => r.id === route)!.hash;
   if (location.hash !== hash) location.hash = hash;

@@ -1178,3 +1178,11 @@ input::placeholder {
     opacity: 0.35;
   }
 }
+
+/* 1.2.2: way back to my own app from a shop's page */
+.view-to-app {
+  margin-top: 8px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}

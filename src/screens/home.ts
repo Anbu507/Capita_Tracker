@@ -20,6 +20,7 @@ import { h } from '../ui/dom.ts';
 import { icon } from '../ui/icons.ts';
 import { go } from '../ui/router.ts';
 import { openEntrySheet } from './entrySheet.ts';
+import { lastViewedShopPage, openLastShopPage } from './shopPage.ts';
 import { approxMoney, compactMoney, emptyState, entryRow, itemsSummary, money, notice, screenHeader, statTile } from './shared.ts';
 
 const BACKUP_EVERY_MS = 30 * 86_400_000;
@@ -30,6 +31,7 @@ export function homeScreen(data: AppData): HTMLElement {
   const header = screenHeader('Home', formatLongDate(now));
 
   if (!entries.length) {
+    const shopPage = lastViewedShopPage();
     return h(
       'div',
       { class: 'screen' },
@@ -41,6 +43,9 @@ export function homeScreen(data: AppData): HTMLElement {
           h('button', { class: 'btn btn-primary', type: 'button', onClick: () => openEntrySheet({ kind: 'topup' }) }, icon('wallet'), 'Add money I gave'),
           h('button', { class: 'btn btn-secondary', type: 'button', onClick: () => openEntrySheet({ kind: 'purchase' }) }, icon('plus'), 'Add what I bought'),
         ),
+        shopPage && h('p', { class: 'empty-foot' },
+          'Looking for the shop\'s page? ',
+          h('button', { class: 'link-btn', type: 'button', onClick: () => openLastShopPage(shopPage) }, "Open the shop's page")),
         !settings.shareId && h('p', { class: 'empty-foot' },
           'Just trying the app? ',
           h('button', { class: 'link-btn', type: 'button', onClick: () => loadSample() }, 'Show an example'),
